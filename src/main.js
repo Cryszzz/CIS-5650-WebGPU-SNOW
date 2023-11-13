@@ -3,6 +3,7 @@ import '../style.css'
 import fullscreenQuadWGSL from '../shaders/fullscreenQuad.wgsl?raw';
 import computeRasterizerWGSL from '../shaders/computeRasterizer.wgsl?raw';
 import { loadModel } from './loadModel.js';
+//import { camera } from './camera.js';
 
 init();
 
@@ -241,6 +242,7 @@ function createComputePass(presentationSize, device, verticesArray) {
   const aspect = WIDTH / HEIGHT;
   const projectionMatrix = mat4.create();
   mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 100.0);
+  //const cam=camera(vec3.fromValues(0.0,0.0,10.0),vec3.fromValues(0.0,0.0,0.0));
 
   const addComputePass = (commandEncoder) => {
     // Compute model view projection matrix
@@ -257,7 +259,7 @@ function createComputePass(presentationSize, device, verticesArray) {
     // Combine all into a modelViewProjection
     mat4.multiply(viewMatrix, viewMatrix, modelMatrix);
     mat4.multiply(modelViewProjectionMatrix, projectionMatrix, viewMatrix);
-
+    //cam.update();
     // Write values to uniform buffer object
     const uniformData = [WIDTH, HEIGHT];
     const uniformTypedArray = new Float32Array(uniformData);
