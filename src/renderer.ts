@@ -25,7 +25,8 @@ export class Renderer {
 
     constructor(canvas: HTMLCanvasElement){
         this.canvas = canvas;
-        console.log("afsdsadas");
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
     }
 
    async Initialize() {
@@ -190,6 +191,8 @@ export class Renderer {
 
     render = () => {
 
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
         const commandEncoder : GPUCommandEncoder = this.device.createCommandEncoder();
 
         const ray_trace_pass : GPUComputePassEncoder = commandEncoder.beginComputePass();
