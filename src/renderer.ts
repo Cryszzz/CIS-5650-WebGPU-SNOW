@@ -25,6 +25,7 @@ export class Renderer {
 
     constructor(canvas: HTMLCanvasElement){
         this.canvas = canvas;
+        console.log("afsdsadas");
     }
 
    async Initialize() {
@@ -34,7 +35,6 @@ export class Renderer {
         await this.createAssets();
     
         await this.makePipeline();
-
         this.render();
     }
 
@@ -47,7 +47,7 @@ export class Renderer {
         //Function calls are made through the device
         this.device = <GPUDevice> await this.adapter?.requestDevice();
         //context: similar to vulkan instance (or OpenGL context)
-        this.context = <GPUCanvasContext> this.canvas.getContext("webgpu");
+        this.context = <GPUCanvasContext> <unknown> this.canvas.getContext("webgpu");
         this.format = "bgra8unorm";
         this.context.configure({
             device: this.device,

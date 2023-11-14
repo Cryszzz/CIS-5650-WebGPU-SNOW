@@ -34,10 +34,10 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
     myRay.direction = normalize(forwards + horizontal_coefficient * right + vertical_coefficient * up);
     myRay.origin = vec3<f32>(0.0, 0.0, 0.0);
 
-    var pixel_color : vec3<f32> = vec3<f32>(0.5, 0.0, 0.25);
+    var pixel_color : vec3<f32> = vec3<f32>(0.10, 0.0, 0.3);
 
     if (hit(myRay, mySphere)) {
-        pixel_color = vec3<f32>(0.5, 1.0, 0.75);
+        pixel_color = vec3<f32>(0.5, 0.6, 0.75);
     }
 
     textureStore(color_buffer, screen_pos, vec4<f32>(pixel_color, 1.0));

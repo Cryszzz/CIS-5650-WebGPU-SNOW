@@ -7,6 +7,7 @@ module.exports = {
         path: path.resolve(__dirname, "dist"),
         publicPath: "/dist/"
     },
+    cache: false,
 
     module: {
         rules: [
@@ -28,5 +29,12 @@ module.exports = {
     
     resolve: {
         extensions: [".ts"]
-    }
+    },
+
+    devServer: {
+        hot: true, // optional, but you must not set both hot and liveReload to true
+        liveReload: false,
+        watchContentBase: true
+    },
+    mode: 'development'
 }
