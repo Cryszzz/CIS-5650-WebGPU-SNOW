@@ -1,14 +1,9 @@
-# WebGPU Samples
+# WebGPU Snow Simulation
 
-**Please visit the [WebGPU Samples website](//webgpu.github.io/webgpu-samples/) to run the samples!**
-
-The WebGPU Samples are a set of samples and demos
-demonstrating the use of the [WebGPU API](//webgpu.dev). Please see the current
-implementation status and how to run WebGPU in your browser at
-[webgpu.io](//webgpu.io).
+**Group 8: Xiaoxiao Zou, Jason Li, Keyu Lu**
 
 ## Building
-`webgpu-samples` is built with [Typescript](https://www.typescriptlang.org/)
+`webgpu-Snow Simulation` is built with [Typescript](https://www.typescriptlang.org/)
 and compiled using [Next.js](https://nextjs.org/). Building the project
 requires an installation of [Node.js](https://nodejs.org/en/).
 
