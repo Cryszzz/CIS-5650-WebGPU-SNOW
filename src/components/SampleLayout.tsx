@@ -191,7 +191,8 @@ const SampleLayout: React.FunctionComponent<
         <div
           style={{
             position: 'absolute',
-            left: 10,
+            left: 0,
+            top: 0,
           }}
           ref={statsParentRef}
         ></div>

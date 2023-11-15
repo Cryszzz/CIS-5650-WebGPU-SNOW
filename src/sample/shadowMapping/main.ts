@@ -6,14 +6,44 @@ import { mesh } from '../../meshes/stanfordDragon';
 import vertexShadowWGSL from './vertexShadow.wgsl';
 import vertexWGSL from './vertex.wgsl';
 import fragmentWGSL from './fragment.wgsl';
+import { WASDCamera, cameraSourceInfo } from './camera';
+import { createInputHandler, inputSourceInfo } from './input';
 
 const shadowDepthTextureSize = 1024;
 
-const init: SampleInit = async ({ canvas, pageState }) => {
+function setCamera(x: number = 0, y: number = 30, z: number = -80)
+{
+  const initialCameraPosition = vec3.create(x, y, z);
+  const initialCameraTarget = vec3.create(0, 15, 0);
+  return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
+}
+
+const init: SampleInit = async ({ canvas, pageState, gui }) => {
+  if (!pageState.active) return;
+
+  // The input handler
+  const inputHandler = createInputHandler(window, canvas);
+
+  // Camera initialization
+  let camera = setCamera();
+
+  const cameraParams = 
+  {
+    resetCamera() {
+      camera = setCamera();
+    }
+  };
+
+  gui.add(cameraParams, 'resetCamera').name("Reset Camera");
+
+  // GUI folders seem to bug the view out, disabling for now - 
+  // the view sometimes doesn't appear when using a folder instead of just adding to gui
+  // const camFolder = gui.addFolder("Camera");
+  // camFolder.open();
+  // camFolder.add(cameraParams, 'resetCamera').name("Reset Camera");
+
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
-
-  if (!pageState.active) return;
 
   const context = canvas.getContext('webgpu') as GPUCanvasContext;
 
@@ -30,6 +60,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
 
   // Create the model vertex buffer.
   const vertexBuffer = device.createBuffer({
+    label: "vertex buffer",
     size: mesh.positions.length * 3 * 2 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.VERTEX,
     mappedAtCreation: true,
@@ -46,6 +77,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
   // Create the model index buffer.
   const indexCount = mesh.triangles.length * 3;
   const indexBuffer = device.createBuffer({
+    label: "index buffer",
     size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.INDEX,
     mappedAtCreation: true,
@@ -115,7 +147,8 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     vertex: {
       module: device.createShaderModule({
         code: vertexShadowWGSL,
-      }),
+        label: "Shadow vertex shader",
+  }),
       entryPoint: 'main',
       buffers: vertexBuffers,
     },
@@ -125,6 +158,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
       format: 'depth32float',
     },
     primitive,
+    label: "Shadow shader pipeline",
   });
 
   // Create a bind group layout which holds the scene uniforms and
@@ -163,6 +197,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     vertex: {
       module: device.createShaderModule({
         code: vertexWGSL,
+        label: "Render pipeline vertex shader",
       }),
       entryPoint: 'main',
       buffers: vertexBuffers,
@@ -170,6 +205,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     fragment: {
       module: device.createShaderModule({
         code: fragmentWGSL,
+        label: "Render pipeline fragment shader",
       }),
       entryPoint: 'main',
       targets: [
@@ -187,6 +223,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
       format: 'depth24plus-stencil8',
     },
     primitive,
+    label: "Render pipeline",
   });
 
   const depthTexture = device.createTexture({
@@ -219,6 +256,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
   };
 
   const modelUniformBuffer = device.createBuffer({
+    label: 'modelUniformBuffer',
     size: 4 * 16, // 4x4 matrix
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
@@ -228,6 +266,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     // one for the camera and one for the light.
     // Then a vec3 for the light position.
     // Rounded to the nearest multiple of 16.
+    label: 'sceneUniformBuffer',
     size: 2 * 4 * 16 + 4 * 4,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
@@ -278,7 +317,6 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     ],
   });
 
-  const eyePosition = vec3.fromValues(0, 50, -100);
   const upVector = vec3.fromValues(0, 1, 0);
   const origin = vec3.fromValues(0, 0, 0);
 
@@ -288,8 +326,6 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     1,
     2000.0
   );
-
-  const viewMatrix = mat4.lookAt(eyePosition, origin, upVector);
 
   const lightPosition = vec3.fromValues(50, 100, -100);
   const lightViewMatrix = mat4.lookAt(lightPosition, origin, upVector);
@@ -309,8 +345,6 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     lightViewMatrix
   );
 
-  const viewProjMatrix = mat4.multiply(projectionMatrix, viewMatrix);
-
   // Move the model so it's centered.
   const modelMatrix = mat4.translation([0, -45, 0]);
 
@@ -325,14 +359,16 @@ const init: SampleInit = async ({ canvas, pageState }) => {
       lightMatrixData.byteLength
     );
 
-    const cameraMatrixData = viewProjMatrix as Float32Array;
-    device.queue.writeBuffer(
-      sceneUniformBuffer,
-      64,
-      cameraMatrixData.buffer,
-      cameraMatrixData.byteOffset,
-      cameraMatrixData.byteLength
-    );
+    // I don't think this does anything because we are writing into sceneUniformBuffer
+    // during frame() anyways.. this breaks the camera so just leaving it out for now
+    // const cameraMatrixData = getModelViewProjectionMatrix(100) as Float32Array;
+    // device.queue.writeBuffer(
+    //   sceneUniformBuffer,
+    //   64,
+    //   cameraMatrixData.buffer,
+    //   cameraMatrixData.byteOffset,
+    //   cameraMatrixData.byteLength
+    // );
 
     const lightData = lightPosition as Float32Array;
     device.queue.writeBuffer(
@@ -353,18 +389,12 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     );
   }
 
-  // Rotates the camera around the origin based on time.
-  function getCameraViewProjMatrix() {
-    const eyePosition = vec3.fromValues(0, 50, -100);
+  const modelViewProjectionMatrix = mat4.create();
 
-    const rad = Math.PI * (Date.now() / 2000);
-    const rotation = mat4.rotateY(mat4.translation(origin), rad);
-    vec3.transformMat4(eyePosition, rotation, eyePosition);
-
-    const viewMatrix = mat4.lookAt(eyePosition, origin, upVector);
-
-    mat4.multiply(projectionMatrix, viewMatrix, viewProjMatrix);
-    return viewProjMatrix as Float32Array;
+  function getModelViewProjectionMatrix(deltaTime: number) {
+    const viewMatrix = camera.update(deltaTime, inputHandler());
+    mat4.multiply(projectionMatrix, viewMatrix, modelViewProjectionMatrix);
+    return modelViewProjectionMatrix as Float32Array;
   }
 
   const shadowPassDescriptor: GPURenderPassDescriptor = {
@@ -377,11 +407,17 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     },
   };
 
+  let lastFrameMS = Date.now();
+
   function frame() {
+    const now = Date.now();
+    const deltaTime = (now - lastFrameMS) / 1000;
+    lastFrameMS = now;
+
     // Sample is no longer the active page.
     if (!pageState.active) return;
 
-    const cameraViewProj = getCameraViewProjMatrix();
+    const cameraViewProj = getModelViewProjectionMatrix(deltaTime);
     device.queue.writeBuffer(
       sceneUniformBuffer,
       64,
@@ -423,11 +459,14 @@ const init: SampleInit = async ({ canvas, pageState }) => {
   requestAnimationFrame(frame);
 };
 
+
+
 const ShadowMapping: () => JSX.Element = () =>
   makeSample({
     name: 'Shadow Mapping',
     description:
       'This example shows how to sample from a depth texture to render shadows.',
+    gui: true,
     init,
     sources: [
       {
