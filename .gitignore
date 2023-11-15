@@ -1,4 +1,4 @@
-node_modules/*
+node_modules/
 .next/
 out/
 id_rsa_deploy_key
