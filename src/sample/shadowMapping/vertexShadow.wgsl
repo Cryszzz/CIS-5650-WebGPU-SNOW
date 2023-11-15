@@ -15,5 +15,7 @@ struct Model {
 fn main(
   @location(0) position: vec3<f32>
 ) -> @builtin(position) vec4<f32> {
-  return scene.lightViewProjMatrix * model.modelMatrix * vec4(position, 1.0);
+  return vec4(position, 1.0);
+  //return scene.lightViewProjMatrix * model.modelMatrix * vec4(position, 1.0);
+  //return model.modelMatrix * vec4(position, 1.0);
 }
