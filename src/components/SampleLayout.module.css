@@ -5,8 +5,8 @@
 }
 
 .canvasContainer>canvas {
-  max-height: 100vh;
-  aspect-ratio: 1;
+  height: 99vh !important;
+  width: 100% !important;
 }
 
 nav.sourceFileNav ul {
