@@ -27,7 +27,7 @@ fn random2(p: vec2<f32>) -> vec2<f32> {
 
 fn worley(p: vec2<f32>) -> f32 {
     var d = 1.0; // Initial distance set to a high value
-    let frequency = 1.0; // Controls the density of the hills
+    let frequency = 0.2; // Controls the density of the hills
     let scaled_p = p * frequency; // Create a new variable for scaled coordinates
 
     for (var y = -1; y <= 1; y++) {
@@ -65,7 +65,8 @@ fn main(
     posFromLight.z
   );
  
-  let newposition=-vec3(position.x,40*worley( vec2(position.x,position.z)),position.z);
+  let update=3.0*sin(position.x/500*3.14)*sin(position.z/500*3.14);
+  let newposition=-vec3(position.x,update*40*worley( vec2(position.x,position.z)),position.z);
   output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4(newposition, 1.0);
   output.fragPos = output.Position.xyz;
   output.fragNorm = normal;

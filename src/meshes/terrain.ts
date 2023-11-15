@@ -1,7 +1,7 @@
 import { computeSurfaceNormals, computeProjectedPlaneUVs } from './utils';
 
 const terrainSize = 1000; // The physical size of each side of the terrain
-const gridSpacing = 10; // The spacing between vertices
+const gridSpacing = 40; // The spacing between vertices
 
 const verticesPerRow = terrainSize / gridSpacing+1; // Number of vertices along one side of the terrain
 //verticesPerRow =3;
