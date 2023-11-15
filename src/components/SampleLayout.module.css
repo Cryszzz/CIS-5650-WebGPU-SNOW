@@ -2,11 +2,15 @@
   text-align: center;
   position: relative;
   margin:0px;
+
 }
 
 .canvasContainer>canvas {
+  /* aspect-ratio: 1; */
+  height: 100vh;
+  width: 100vh;
   max-height: 100vh;
-  aspect-ratio: 1;
+  max-width: 100vh;
 }
 
 nav.sourceFileNav ul {
