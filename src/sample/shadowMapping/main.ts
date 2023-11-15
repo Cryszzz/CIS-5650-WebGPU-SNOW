@@ -1,7 +1,6 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
-
-import { mesh } from '../../meshes/stanfordDragon';
+import { mesh } from '../../meshes/terrain';
 
 import vertexShadowWGSL from './vertexShadow.wgsl';
 import vertexWGSL from './vertex.wgsl';
@@ -28,7 +27,27 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     alphaMode: 'premultiplied',
   });
 
+  const vertexBuffer = device.createBuffer({
+    size: mesh.positions.length * (3 + 3 + 2) * 4, // Total vertices * floats per vertex * bytes per float
+    usage: GPUBufferUsage.VERTEX,
+    mappedAtCreation: true,
+  });
+
+  const mapping = new Float32Array(vertexBuffer.getMappedRange());
+  for (let i = 0, offset = 0; i < mesh.positions.length; ++i) {
+      mapping.set(mesh.positions[i], offset); 
+      offset += 3; // 3 floats for position
+      mapping.set(mesh.normals[i], offset); 
+      offset += 3; // 3 floats for normal
+      mapping.set(mesh.uvs[i], offset); 
+      offset += 2; // 2 floats for UV
+      // Note: The offset now points to the start of the next vertex
+  }
+  vertexBuffer.unmap();
+
+
   // Create the model vertex buffer.
+  /*
   const vertexBuffer = device.createBuffer({
     size: mesh.positions.length * 3 * 2 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.VERTEX,
@@ -42,7 +61,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
     }
     vertexBuffer.unmap();
   }
-
+  */
   // Create the model index buffer.
   const indexCount = mesh.triangles.length * 3;
   const indexBuffer = device.createBuffer({
@@ -70,7 +89,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
   // and the color rendering pipeline.
   const vertexBuffers: Iterable<GPUVertexBufferLayout> = [
     {
-      arrayStride: Float32Array.BYTES_PER_ELEMENT * 6,
+      arrayStride: Float32Array.BYTES_PER_ELEMENT * 8, // 3 pos + 3 normal + 2 uv
       attributes: [
         {
           // position
@@ -83,6 +102,12 @@ const init: SampleInit = async ({ canvas, pageState }) => {
           shaderLocation: 1,
           offset: Float32Array.BYTES_PER_ELEMENT * 3,
           format: 'float32x3',
+        },
+        {
+          // uv
+          shaderLocation: 2,
+          offset: Float32Array.BYTES_PER_ELEMENT * 6,
+          format: 'float32x2',
         },
       ],
     },
@@ -333,7 +358,7 @@ const init: SampleInit = async ({ canvas, pageState }) => {
       cameraMatrixData.byteOffset,
       cameraMatrixData.byteLength
     );
-
+//here
     const lightData = lightPosition as Float32Array;
     device.queue.writeBuffer(
       sceneUniformBuffer,

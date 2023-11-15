@@ -19,25 +19,57 @@ struct VertexOutput {
   @builtin(position) Position: vec4<f32>,
 }
 
+fn random2(p: vec2<f32>) -> vec2<f32> {
+    // A simple hash function for 2D points
+    return fract(sin(vec2<f32>(dot(p, vec2<f32>(127.1, 311.7)),
+                              dot(p, vec2<f32>(269.5, 183.3)))) * 43758.5453);
+}
+
+fn worley(p: vec2<f32>) -> f32 {
+    var d = 1.0; // Initial distance set to a high value
+    let frequency = 5.0; // Controls the density of the hills
+    let scaled_p = p * frequency; // Create a new variable for scaled coordinates
+
+    for (var y = -1; y <= 1; y++) {
+        for (var x = -1; x <= 1; x++) {
+            let neighbor = vec2<f32>(f32(x), f32(y));
+            let point = random2(floor(scaled_p) + neighbor);
+            let diff = neighbor + point - fract(scaled_p);
+            let dist = length(diff); // Use length instead of dot for true distance
+            d = min(d, dist);
+        }
+    }
+    
+    // Invert and smooth the noise to create hills
+    d = 1.0 - d;
+    d = smoothstep(0.0, 1.0, d);
+
+    return d; // Return the smoothed distance
+}
+
+
+
 @vertex
 fn main(
   @location(0) position: vec3<f32>,
   @location(1) normal: vec3<f32>
 ) -> VertexOutput {
   var output : VertexOutput;
+  // Modify the y-coordinate of the position based on Worley noise
+  let noiseScale = 10.0; // Adjust this scale factor as needed
+  //let noiseValue = worley(position.xy / 10.0) * noiseScale; // Scale the position and noise value
+  let noiseValue = worley(vec2<f32>(position.x, position.z)) * noiseScale;
+  let modifiedPosition = vec3(position.x, position.y + noiseValue, position.z);
+  // Update calculations using modifiedPosition
+  let posFromLight = scene.lightViewProjMatrix * model.modelMatrix * vec4(modifiedPosition, 1.0);
+  output.shadowPos = vec3(posFromLight.xy * vec2(0.5, -0.5) + vec2(0.5), posFromLight.z);
 
-  // XY is in (-1, 1) space, Z is in (0, 1) space
-  let posFromLight = scene.lightViewProjMatrix * model.modelMatrix * vec4(position, 1.0);
-
-  // Convert XY to (0, 1)
-  // Y is flipped because texture coords are Y-down.
-  output.shadowPos = vec3(
-    posFromLight.xy * vec2(0.5, -0.5) + vec2(0.5),
-    posFromLight.z
-  );
-
-  output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4(position, 1.0);
+  output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4(modifiedPosition, 1.0);
   output.fragPos = output.Position.xyz;
+
+  // Update normal if necessary
   output.fragNorm = normal;
+
   return output;
 }
+
