@@ -1,5 +1,15 @@
 import { computeSurfaceNormals, computeProjectedPlaneUVs } from './utils';
+// Another TypeScript file in your project
+import { getHeightData } from './geotiff-utils';
 
+async function loadAndUseHeightData() {
+    const url = '../assets/img/file/everest.tif';
+    const heightData = await getHeightData(url);
+    // Use heightData as needed
+    return heightData;
+}
+
+const heightmap = loadAndUseHeightData();
 const terrainSize = 1000; // The physical size of each side of the terrain
 const gridSpacing = 40; // The spacing between vertices
 
