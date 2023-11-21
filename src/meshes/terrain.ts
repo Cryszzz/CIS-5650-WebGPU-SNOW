@@ -3,7 +3,7 @@ import { computeSurfaceNormals, computeProjectedPlaneUVs } from './utils';
 import { getHeightData } from './geotiff-utils';
 
 async function loadAndUseHeightData() {
-    const url = '../assets/img/file/everest.tif';
+    const url = 'file://../assets/img/file/everest.tif';
     const heightData = await getHeightData(url);
     // Use heightData as needed
     return heightData;
