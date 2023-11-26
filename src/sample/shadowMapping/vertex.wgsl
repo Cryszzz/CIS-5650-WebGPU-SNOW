@@ -67,7 +67,7 @@ fn main(
  
   let update=3.0*sin(position.x/500*3.14)*sin(position.z/500*3.14);
   let newposition=-vec3(position.x,update*40*worley( vec2(position.x,position.z)),position.z);
-  output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4(newposition, 1.0);
+  output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4(position, 1.0);
   output.fragPos = output.Position.xyz;
   output.fragNorm = normal;
   return output;

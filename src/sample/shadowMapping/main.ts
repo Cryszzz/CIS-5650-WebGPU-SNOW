@@ -1,7 +1,7 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
 
-import { mesh } from '../../meshes/terrain';
+import { getTerrainMesh } from '../../meshes/terrain';
 
 import vertexShadowWGSL from './vertexShadow.wgsl';
 import vertexWGSL from './vertex.wgsl';
@@ -57,7 +57,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     format: presentationFormat,
     alphaMode: 'premultiplied',
   });
-
+  const mesh=await getTerrainMesh();
   // Create the model vertex buffer.
   const vertexBuffer = device.createBuffer({
     label: "vertex buffer",
