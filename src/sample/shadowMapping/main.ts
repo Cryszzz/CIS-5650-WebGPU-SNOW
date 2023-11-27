@@ -9,7 +9,8 @@ import fragmentWGSL from './fragment.wgsl';
 import snowComputeWGSL from './snowCompute.wgsl';
 import { WASDCamera, cameraSourceInfo } from './camera';
 import { createInputHandler, inputSourceInfo } from './input';
-import './snowComputeInterfaces';
+import { TerrainCellArray, WeatherDataArray, SolarRadiation } from './snowComputeInterfaces';
+import { time } from 'console';
 
 const shadowDepthTextureSize = 1024;
 const WORKGROUP_SIZE = 8;
@@ -153,7 +154,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         binding: 1,
         visibility: GPUShaderStage.COMPUTE,
         buffer: {
-          type: 'read-only storage',
+          type: 'read-only-storage',
         }
       },
       {
@@ -176,8 +177,26 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       {
         binding: 5,
         visibility: GPUShaderStage.COMPUTE,
+        // texture:
+        // {
+        //   sampleType: 'float',
+        //   viewDimension: '2d',
+        //   access: 'write-only'
+        // },
+        storageTexture: {
+          access: 'write-only', // Assuming you want to write to the texture
+          format: 'rgba32float', // Format of the texture
+          viewDimension: '2d', // View dimension can be '1d', '2d', '2d-array', '3d', etc.
+      },
+        // storageTexture:
+        // {
+        //   access: 'write-only'
+        // }
         // storageTexture: 'storage-texture',
-        type: 'storage-texture'
+        // buffer:
+        // {
+        //   type: 'storage-texture'
+        // }
       },
     ],
   }); 
@@ -342,20 +361,27 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   device.queue.writeBuffer(gridSizeBuffer, 0, gridSizeArray.buffer); // TODO: move this to later
-
+  
   const terrainCellArray1 = new TerrainCellArray(GRID_SIZE * GRID_SIZE);
+  console.log(terrainCellArray1.getByteLength());
   const terrainCellBuffer1 = device.createBuffer({
     label: 'terrainCellBuffer',
     size: terrainCellArray1.getByteLength(),
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   });
+  device.queue.writeBuffer(terrainCellBuffer1, 0, terrainCellArray1.getBuffer()); // TODO: move this to later
+
 
   const weatherDataArray = new WeatherDataArray(GRID_SIZE * GRID_SIZE);
+  console.log(weatherDataArray.getByteLength());
+
   const weatherDataBuffer = device.createBuffer({
     label: 'weatherDataBuffer',
     size: weatherDataArray.getByteLength(),
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
+  // TODO: combine into one uniform buffer 
+  device.queue.writeBuffer(weatherDataBuffer, 0, weatherDataArray.getBuffer()); // TODO: move this to later
 
   const solarRadiation = new SolarRadiation({sunrise: 0.0, sunset: 10.0, ri: 5.0}); // TODO: default numbers
   const solarRadiationBuffer = device.createBuffer({
@@ -377,9 +403,11 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     mipLevelCount: 1,
     sampleCount: 1,
     dimension: '2d',
-    usage: GPUTextureUsage.COPY_DST, //TODO: figure out usage
+    // TODO: https://developer.mozilla.org/en-US/docs/Web/API/GPUTexture/usage
+    usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING, //TODO: figure out usage
   });
 
+  // TODO: need to ping pong terrainCellBuffer1 and terrainCellBuffer2
   const sceneBindGroupForCompute = device.createBindGroup({
     label: "Scene bind group for compute",
     layout: snowBufferBindGroupLayout,
@@ -497,6 +525,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     lightViewMatrix
   );
 
+  // const timeArray = new Float32Array([150]);
+  
+
   // Move the model so it's centered.
   const modelMatrix = mat4.translation([0, -45, 0]);
 
@@ -531,6 +562,14 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       lightData.byteLength
     );
 
+    // device.queue.writeBuffer(
+    //   sceneUniformBuffer,
+    //   140,
+    //   timeArray.buffer,
+    //   timeArray.byteOffset,
+    //   timeArray.byteLength
+    // )
+
     const modelData = modelMatrix as Float32Array;
     device.queue.writeBuffer(
       modelUniformBuffer,
@@ -563,7 +602,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
 
   function frame() {
     const now = Date.now();
-    const deltaTime = (now - lastFrameMS) / 1000;
+    const deltaTime : number = (now - lastFrameMS) / 1000;
+    const timeArray = new Float32Array([now]);
     lastFrameMS = now;
 
     // Sample is no longer the active page.
@@ -577,6 +617,15 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       cameraViewProj.byteOffset,
       cameraViewProj.byteLength
     );
+
+    // console.log(timeArray);
+    // device.queue.writeBuffer(
+    //   sceneUniformBuffer,
+    //   140,
+    //   timeArray.buffer,
+    //   timeArray.byteOffset,
+    //   timeArray.byteLength
+    // )
 
     renderPassDescriptor.colorAttachments[0].view = context
       .getCurrentTexture()
