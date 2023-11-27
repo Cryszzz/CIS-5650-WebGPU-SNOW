@@ -9,6 +9,7 @@ import fragmentWGSL from './fragment.wgsl';
 import snowComputeWGSL from './snowCompute.wgsl';
 import { WASDCamera, cameraSourceInfo } from './camera';
 import { createInputHandler, inputSourceInfo } from './input';
+import './snowComputeInterfaces';
 
 const shadowDepthTextureSize = 1024;
 const WORKGROUP_SIZE = 8;
@@ -146,9 +147,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       {
         binding: 0,
         visibility: GPUShaderStage.COMPUTE,
-        buffer: {
-          type: 'uniform',
-        }
+        buffer: {} //uniform
       },
       {
         binding: 1,
@@ -160,16 +159,12 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       {
         binding: 2,
         visibility: GPUShaderStage.COMPUTE,
-        buffer: {
-          type: 'uniform',
-        }
+        buffer: {}
       },
       {
         binding: 3,
         visibility: GPUShaderStage.COMPUTE,
-        buffer: {
-          type: 'uniform',
-        }
+        buffer: {}
       },
       {
         binding: 4,
@@ -181,16 +176,17 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       {
         binding: 5,
         visibility: GPUShaderStage.COMPUTE,
-        storageTexture: 'write-only',
-      }
-    ]
+        // storageTexture: 'storage-texture',
+        type: 'storage-texture'
+      },
+    ],
   }); 
 
   const snowPipeline = device.createComputePipeline({
     label: "Snow pipeline",
     layout: device.createPipelineLayout({
       label: "Snow pipeline layout",
-      bindGroupLayouts: [], // TODO
+      bindGroupLayouts: [snowBufferBindGroupLayout], // TODO
     }),
     compute: {
       module: device.createShaderModule({
@@ -337,6 +333,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
+  // ------ SNOW COMPUTE SHADER BUFFERS ------ //
+
   const gridSizeArray = new Uint32Array([GRID_SIZE, GRID_SIZE]);
   const gridSizeBuffer = device.createBuffer({
     label: 'gridSizeBuffer',
@@ -345,10 +343,41 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   });
   device.queue.writeBuffer(gridSizeBuffer, 0, gridSizeArray.buffer); // TODO: move this to later
 
-  const terrainCellBuffer = device.createBuffer({
+  const terrainCellArray1 = new TerrainCellArray(GRID_SIZE * GRID_SIZE);
+  const terrainCellBuffer1 = device.createBuffer({
     label: 'terrainCellBuffer',
-    size: terrainCellArray.byteLength,
+    size: terrainCellArray1.getByteLength(),
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  });
+
+  const weatherDataArray = new WeatherDataArray(GRID_SIZE * GRID_SIZE);
+  const weatherDataBuffer = device.createBuffer({
+    label: 'weatherDataBuffer',
+    size: weatherDataArray.getByteLength(),
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+
+  const solarRadiation = new SolarRadiation({sunrise: 0.0, sunset: 10.0, ri: 5.0}); // TODO: default numbers
+  const solarRadiationBuffer = device.createBuffer({
+    label: 'solarRadiationBuffer',
+    size: solarRadiation.getByteLength(),
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+
+  const terrainCellArray2 = new TerrainCellArray(GRID_SIZE * GRID_SIZE);
+  const terrainCellBuffer2 = device.createBuffer({
+    label: 'terrainCellBuffer',
+    size: terrainCellArray2.getByteLength(),
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  });
+
+  const snowTexture = device.createTexture({ // TODO: figure out how to use this
+    size: [GRID_SIZE, GRID_SIZE],
+    format: 'rgba32float',
+    mipLevelCount: 1,
+    sampleCount: 1,
+    dimension: '2d',
+    usage: GPUTextureUsage.COPY_DST, //TODO: figure out usage
   });
 
   const sceneBindGroupForCompute = device.createBindGroup({
@@ -358,44 +387,41 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       {
         binding: 0,
         resource: {
-          buffer: ,
+          buffer: gridSizeBuffer,
         },
       },
       {
         binding: 1,
         resource: {
-          buffer: ,
+          buffer: terrainCellBuffer1,
         },
       },
       {
         binding: 2,
         resource: {
-          buffer: ,
+          buffer: weatherDataBuffer,
         },
       },
       {
         binding: 3,
         resource: {
-          buffer: ,
+          buffer: solarRadiationBuffer,
         },
       },
       {
         binding: 4,
         resource: {
-          buffer: ,
+          buffer: terrainCellBuffer2,
         },
       },
       {
         binding: 5,
-        resource: {
-          texture: ,
-        },
+        resource: snowTexture.createView(),
       }
     ]
-
   });
 
-
+  // ------ END SNOW COMPUTE SHADER BUFFERS ------ //
 
   const sceneBindGroupForShadow = device.createBindGroup({
     layout: uniformBufferBindGroupLayout,
