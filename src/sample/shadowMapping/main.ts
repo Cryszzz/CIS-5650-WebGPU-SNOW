@@ -1,5 +1,6 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
+import { fromUrl } from 'geotiff';
 
 import { getTerrainMesh } from '../../meshes/terrain';
 
@@ -11,10 +12,10 @@ import { createInputHandler, inputSourceInfo } from './input';
 
 const shadowDepthTextureSize = 1024;
 
-function setCamera(x: number = 0, y: number = 30, z: number = -80)
+function setCamera(x: number = 0, y: number = 300, z: number = -80)
 {
   const initialCameraPosition = vec3.create(x, y, z);
-  const initialCameraTarget = vec3.create(0, 15, 0);
+  const initialCameraTarget = vec3.create(0, 260, 0);
   return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
 }
 
@@ -57,45 +58,49 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     format: presentationFormat,
     alphaMode: 'premultiplied',
   });
-  //const mesh=await getTerrainMesh();
-  // At the beginning of the init function
-  const { mesh, texture } = await getTerrainMesh(device);
-  // Create a sampler for the texture
+  const mesh=await getTerrainMesh();
+  // Create the model vertex buffer.
+  let cubeTexture: GPUTexture;
+  {
+    const response = await fetch('../assets/img/file/texture.png');
+    const imageBitmap = await createImageBitmap(await response.blob());
+
+    cubeTexture = device.createTexture({
+      size: [imageBitmap.width, imageBitmap.height, 1],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    device.queue.copyExternalImageToTexture(
+      { source: imageBitmap },
+      { texture: cubeTexture },
+      [imageBitmap.width, imageBitmap.height]
+    );
+  }
   const sampler = device.createSampler({
     magFilter: 'linear',
     minFilter: 'linear',
+    mipmapFilter: 'linear',
     addressModeU: 'repeat',
     addressModeV: 'repeat',
+    addressModeW: 'repeat',
   });
-
-  // Create bind group layout and bind group for the texture and sampler
-  const textureBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
-    ],
-  });
-
-  const textureBindGroup = device.createBindGroup({
-    layout: textureBindGroupLayout,
-    entries: [
-      { binding: 0, resource: texture.createView() },
-      { binding: 1, resource: sampler },
-    ],
-  });
-
-  // Create the model vertex buffer.
+  
   const vertexBuffer = device.createBuffer({
     label: "vertex buffer",
-    size: mesh.positions.length * 3 * 2 * Float32Array.BYTES_PER_ELEMENT,
+    size: mesh.positions.length * 8 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.VERTEX,
     mappedAtCreation: true,
   });
+
   {
     const mapping = new Float32Array(vertexBuffer.getMappedRange());
     for (let i = 0; i < mesh.positions.length; ++i) {
-      mapping.set(mesh.positions[i], 6 * i);
-      mapping.set(mesh.normals[i], 6 * i + 3);
+      mapping.set(mesh.positions[i], 8 * i);
+      mapping.set(mesh.normals[i], 8 * i + 3);
+      mapping.set(mesh.uvs[i], 8 * i+6);
     }
     vertexBuffer.unmap();
   }
@@ -128,7 +133,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   // and the color rendering pipeline.
   const vertexBuffers: Iterable<GPUVertexBufferLayout> = [
     {
-      arrayStride: Float32Array.BYTES_PER_ELEMENT * 6,
+      arrayStride: Float32Array.BYTES_PER_ELEMENT * 8,
       attributes: [
         {
           // position
@@ -141,6 +146,12 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
           shaderLocation: 1,
           offset: Float32Array.BYTES_PER_ELEMENT * 3,
           format: 'float32x3',
+        },
+        {
+          // normal
+          shaderLocation: 2,
+          offset: Float32Array.BYTES_PER_ELEMENT * 6,
+          format: 'float32x2',
         },
       ],
     },
@@ -213,12 +224,24 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
           type: 'comparison',
         },
       },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        sampler: {
+        },
+      },
+      {
+        binding: 4,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        texture: {
+        },
+      },
     ],
   });
 
   const pipeline = device.createRenderPipeline({
     layout: device.createPipelineLayout({
-      bindGroupLayouts: [bglForRender, uniformBufferBindGroupLayout, textureBindGroupLayout],
+      bindGroupLayouts: [bglForRender, uniformBufferBindGroupLayout],
     }),
     vertex: {
       module: device.createShaderModule({
@@ -327,6 +350,14 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         resource: device.createSampler({
           compare: 'less',
         }),
+      },
+      {
+        binding: 3,
+        resource: sampler,
+      },
+      {
+        binding: 4,
+        resource: cubeTexture.createView(),
       },
     ],
   });
@@ -473,7 +504,6 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       renderPass.setPipeline(pipeline);
       renderPass.setBindGroup(0, sceneBindGroupForRender);
       renderPass.setBindGroup(1, modelBindGroup);
-      renderPass.setBindGroup(2, textureBindGroup); // Bind the texture and sampler
       renderPass.setVertexBuffer(0, vertexBuffer);
       renderPass.setIndexBuffer(indexBuffer, 'uint16');
       renderPass.drawIndexed(indexCount);

@@ -15,7 +15,7 @@ struct VertexOutput {
   @location(0) shadowPos: vec3<f32>,
   @location(1) fragPos: vec3<f32>,
   @location(2) fragNorm: vec3<f32>,
-
+  @location(3) fragUV: vec2<f32>,
   @builtin(position) Position: vec4<f32>,
 }
 
@@ -51,7 +51,8 @@ fn worley(p: vec2<f32>) -> f32 {
 @vertex
 fn main(
   @location(0) position: vec3<f32>,
-  @location(1) normal: vec3<f32>
+  @location(1) normal: vec3<f32>,
+  @location(2) uvs: vec2<f32>,
 ) -> VertexOutput {
   var output : VertexOutput;
 
@@ -70,6 +71,7 @@ fn main(
   output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4(position, 1.0);
   output.fragPos = output.Position.xyz;
   output.fragNorm = normal;
+  output.fragUV=uvs;
   return output;
 }
 
