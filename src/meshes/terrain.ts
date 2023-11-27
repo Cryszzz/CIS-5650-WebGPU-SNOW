@@ -5,7 +5,7 @@ var imgText: number[] = [0, 0];
 
 async function loadAndUseHeightData() {
     const url = '../assets/img/file/everest.tif';
-    //const url = '../assets/img/file/srtm_38_07.tif';
+    //const url = '../assets/img/file/test2.tif';
     const heightData = await getHeightData(url);
     imgText[0] = numberArray[0];
     imgText[1] = numberArray[1];
@@ -23,8 +23,9 @@ async function generateTerrainMesh() {
     //const height = 55;
     //const width = 33;
     const terrainSize = 1000;
-    const gridSpacing = 10;
-    const skip=1;
+    const gridSpacing = 1;
+    const skip=20;
+    const uvrepeat=10;
     const verticesPerRow = Math.floor(height/skip);
     const verticesPerColumn = Math.floor(width/skip);
     
@@ -35,8 +36,9 @@ async function generateTerrainMesh() {
         for (let z = 0; z <verticesPerRow*skip; z+=skip) {
             const data=heightData[x+z*width];
             //console.log(data);
-            positions.push([(x - width / 2)*gridSpacing, data/10-600, (z - height / 2)*gridSpacing]);
-            uvs.push([x/verticesPerRow*skip,verticesPerRow*skip-z/verticesPerRow*skip]);
+            positions.push([(x - width / 2)*gridSpacing, data, (z - height / 2)*gridSpacing]);
+            //positions.push([(x - width / 2)*gridSpacing, 0, (z - height / 2)*gridSpacing]);
+            uvs.push([x/(verticesPerRow*skip)*uvrepeat,verticesPerRow*skip-z/(verticesPerRow*skip)*uvrepeat]);
         }
     }
 

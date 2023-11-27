@@ -15,7 +15,7 @@ const shadowDepthTextureSize = 1024;
 function setCamera(x: number = 0, y: number = 300, z: number = -80)
 {
   const initialCameraPosition = vec3.create(x, y, z);
-  const initialCameraTarget = vec3.create(0, 260, 0);
+  const initialCameraTarget = vec3.create(0, 250, 0);
   return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
 }
 
@@ -62,7 +62,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   // Create the model vertex buffer.
   let cubeTexture: GPUTexture;
   {
-    const response = await fetch('../assets/img/file/texture.png');
+    const response = await fetch('../assets/img/file/rock.png');
     const imageBitmap = await createImageBitmap(await response.blob());
 
     cubeTexture = device.createTexture({
@@ -228,6 +228,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         binding: 3,
         visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
         sampler: {
+          //type:"filtering",
         },
       },
       {

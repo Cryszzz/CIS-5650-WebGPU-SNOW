@@ -28,6 +28,7 @@ export async function getHeightData(filePath: string): Promise<Float32Array> {
 
     // Read raster data from the image
     const rasterData = await image.readRasters();
+    console.log(rasterData);
     const { ModelPixelScale: s, ModelTiepoint: t } = image.fileDirectory;
     let [sx, sy, sz] = s;
     let [px, py, k, gx, gy, gz] = t;
