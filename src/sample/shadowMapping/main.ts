@@ -6,10 +6,13 @@ import { getTerrainMesh } from '../../meshes/terrain';
 import vertexShadowWGSL from './vertexShadow.wgsl';
 import vertexWGSL from './vertex.wgsl';
 import fragmentWGSL from './fragment.wgsl';
+import snowComputeWGSL from './snowCompute.wgsl';
 import { WASDCamera, cameraSourceInfo } from './camera';
 import { createInputHandler, inputSourceInfo } from './input';
 
 const shadowDepthTextureSize = 1024;
+const WORKGROUP_SIZE = 8;
+const GRID_SIZE = 80;
 
 function setCamera(x: number = 0, y: number = 30, z: number = -80)
 {
@@ -137,6 +140,67 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     ],
   });
 
+  const snowBufferBindGroupLayout = device.createBindGroupLayout({
+    label: "Snow buffer bind group layout",
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: 'uniform',
+        }
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: 'read-only storage',
+        }
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: 'uniform',
+        }
+      },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: 'uniform',
+        }
+      },
+      {
+        binding: 4,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: 'storage',
+        }
+      },
+      {
+        binding: 5,
+        visibility: GPUShaderStage.COMPUTE,
+        storageTexture: 'write-only',
+      }
+    ]
+  }); 
+
+  const snowPipeline = device.createComputePipeline({
+    label: "Snow pipeline",
+    layout: device.createPipelineLayout({
+      label: "Snow pipeline layout",
+      bindGroupLayouts: [], // TODO
+    }),
+    compute: {
+      module: device.createShaderModule({
+        code: snowComputeWGSL,
+        label: "Snow compute shader",
+      }),
+      entryPoint: 'compute_main',
+    }
+  });
+
   const shadowPipeline = device.createRenderPipeline({
     layout: device.createPipelineLayout({
       bindGroupLayouts: [
@@ -160,6 +224,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     primitive,
     label: "Shadow shader pipeline",
   });
+
+
 
   // Create a bind group layout which holds the scene uniforms and
   // the texture+sampler for depth. We create it manually because the WebPU
@@ -270,6 +336,66 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     size: 2 * 4 * 16 + 4 * 4,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
+
+  const gridSizeArray = new Uint32Array([GRID_SIZE, GRID_SIZE]);
+  const gridSizeBuffer = device.createBuffer({
+    label: 'gridSizeBuffer',
+    size: gridSizeArray.byteLength,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+  device.queue.writeBuffer(gridSizeBuffer, 0, gridSizeArray.buffer); // TODO: move this to later
+
+  const terrainCellBuffer = device.createBuffer({
+    label: 'terrainCellBuffer',
+    size: terrainCellArray.byteLength,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  });
+
+  const sceneBindGroupForCompute = device.createBindGroup({
+    label: "Scene bind group for compute",
+    layout: snowBufferBindGroupLayout,
+    entries: [
+      {
+        binding: 0,
+        resource: {
+          buffer: ,
+        },
+      },
+      {
+        binding: 1,
+        resource: {
+          buffer: ,
+        },
+      },
+      {
+        binding: 2,
+        resource: {
+          buffer: ,
+        },
+      },
+      {
+        binding: 3,
+        resource: {
+          buffer: ,
+        },
+      },
+      {
+        binding: 4,
+        resource: {
+          buffer: ,
+        },
+      },
+      {
+        binding: 5,
+        resource: {
+          texture: ,
+        },
+      }
+    ]
+
+  });
+
+
 
   const sceneBindGroupForShadow = device.createBindGroup({
     layout: uniformBufferBindGroupLayout,
@@ -432,6 +558,15 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
 
     const commandEncoder = device.createCommandEncoder();
     {
+      const snowComputePass = commandEncoder.beginComputePass();
+      snowComputePass.setPipeline(snowPipeline);
+      snowComputePass.setBindGroup(0, sceneBindGroupForCompute); //TODO: sceneBindGroupForCompute
+      
+      const workgroupCount = Math.ceil(GRID_SIZE / WORKGROUP_SIZE);
+      snowComputePass.dispatchWorkgroups(workgroupCount, workgroupCount)
+      snowComputePass.end();
+    }
+    {
       const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
       shadowPass.setPipeline(shadowPipeline);
       shadowPass.setBindGroup(0, sceneBindGroupForShadow);
@@ -453,6 +588,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
 
       renderPass.end();
     }
+
     device.queue.submit([commandEncoder.finish()]);
     requestAnimationFrame(frame);
   }
