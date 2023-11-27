@@ -1,7 +1,8 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
+import { fromUrl } from 'geotiff';
 
-import { mesh } from '../../meshes/terrain';
+import { getTerrainMesh } from '../../meshes/terrain';
 
 import vertexShadowWGSL from './vertexShadow.wgsl';
 import vertexWGSL from './vertex.wgsl';
@@ -11,10 +12,10 @@ import { createInputHandler, inputSourceInfo } from './input';
 
 const shadowDepthTextureSize = 1024;
 
-function setCamera(x: number = 0, y: number = 30, z: number = -80)
+function setCamera(x: number = 0, y: number = 300, z: number = -80)
 {
   const initialCameraPosition = vec3.create(x, y, z);
-  const initialCameraTarget = vec3.create(0, 15, 0);
+  const initialCameraTarget = vec3.create(0, 250, 0);
   return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
 }
 
@@ -57,19 +58,49 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     format: presentationFormat,
     alphaMode: 'premultiplied',
   });
-
+  const mesh=await getTerrainMesh();
   // Create the model vertex buffer.
+  let cubeTexture: GPUTexture;
+  {
+    const response = await fetch('../assets/img/file/rock.png');
+    const imageBitmap = await createImageBitmap(await response.blob());
+
+    cubeTexture = device.createTexture({
+      size: [imageBitmap.width, imageBitmap.height, 1],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    device.queue.copyExternalImageToTexture(
+      { source: imageBitmap },
+      { texture: cubeTexture },
+      [imageBitmap.width, imageBitmap.height]
+    );
+  }
+  const sampler = device.createSampler({
+    magFilter: 'linear',
+    minFilter: 'linear',
+    mipmapFilter: 'linear',
+    addressModeU: 'repeat',
+    addressModeV: 'repeat',
+    addressModeW: 'repeat',
+  });
+  
   const vertexBuffer = device.createBuffer({
     label: "vertex buffer",
-    size: mesh.positions.length * 3 * 2 * Float32Array.BYTES_PER_ELEMENT,
+    size: mesh.positions.length * 8 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.VERTEX,
     mappedAtCreation: true,
   });
+
   {
     const mapping = new Float32Array(vertexBuffer.getMappedRange());
     for (let i = 0; i < mesh.positions.length; ++i) {
-      mapping.set(mesh.positions[i], 6 * i);
-      mapping.set(mesh.normals[i], 6 * i + 3);
+      mapping.set(mesh.positions[i], 8 * i);
+      mapping.set(mesh.normals[i], 8 * i + 3);
+      mapping.set(mesh.uvs[i], 8 * i+6);
     }
     vertexBuffer.unmap();
   }
@@ -102,7 +133,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   // and the color rendering pipeline.
   const vertexBuffers: Iterable<GPUVertexBufferLayout> = [
     {
-      arrayStride: Float32Array.BYTES_PER_ELEMENT * 6,
+      arrayStride: Float32Array.BYTES_PER_ELEMENT * 8,
       attributes: [
         {
           // position
@@ -115,6 +146,12 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
           shaderLocation: 1,
           offset: Float32Array.BYTES_PER_ELEMENT * 3,
           format: 'float32x3',
+        },
+        {
+          // normal
+          shaderLocation: 2,
+          offset: Float32Array.BYTES_PER_ELEMENT * 6,
+          format: 'float32x2',
         },
       ],
     },
@@ -185,6 +222,19 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
         sampler: {
           type: 'comparison',
+        },
+      },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        sampler: {
+          //type:"filtering",
+        },
+      },
+      {
+        binding: 4,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        texture: {
         },
       },
     ],
@@ -301,6 +351,14 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         resource: device.createSampler({
           compare: 'less',
         }),
+      },
+      {
+        binding: 3,
+        resource: sampler,
+      },
+      {
+        binding: 4,
+        resource: cubeTexture.createView(),
       },
     ],
   });

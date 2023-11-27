@@ -9,11 +9,14 @@ struct Scene {
 @group(0) @binding(0) var<uniform> scene : Scene;
 @group(0) @binding(1) var shadowMap: texture_depth_2d;
 @group(0) @binding(2) var shadowSampler: sampler_comparison;
+@group(0) @binding(3) var textureSampler: sampler;
+@group(0) @binding(4) var texture: texture_2d<f32>;
 
 struct FragmentInput {
   @location(0) shadowPos : vec3<f32>,
   @location(1) fragPos : vec3<f32>,
   @location(2) fragNorm : vec3<f32>,
+  @location(3) fragUV: vec2<f32>,
 }
 
 const albedo = vec3<f32>(0.9,0.7,0.4);
@@ -39,6 +42,6 @@ fn main(input : FragmentInput) -> @location(0) vec4<f32> {
 
   let lambertFactor = max(dot(normalize(scene.lightPos - input.fragPos), input.fragNorm), 0.0);
   let lightingFactor = min(ambientFactor + lambertFactor, 1.0);
-
-  return vec4( lightingFactor*albedo, 1.0);
+  let newalbedo = textureSample(texture, textureSampler, input.fragUV);
+  return vec4( lightingFactor*newalbedo.xyz, 1.0);
 }

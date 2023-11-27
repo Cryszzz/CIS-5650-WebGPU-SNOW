@@ -1,54 +1,75 @@
 import { computeSurfaceNormals, computeProjectedPlaneUVs } from './utils';
+import { getHeightData, numberArray } from './geotiff-utils';
 
-const terrainSize = 1000; // The physical size of each side of the terrain
-const gridSpacing = 40; // The spacing between vertices
+var imgText: number[] = [0, 0];
 
-const verticesPerRow = terrainSize / gridSpacing+1; // Number of vertices along one side of the terrain
-//verticesPerRow =3;
-console.log(verticesPerRow);
-
-// Generate a grid of positions
-const positions: [number, number, number][] = [];
-for (let x = -terrainSize/2; x <= terrainSize/2; x += gridSpacing) {
-    for (let z = -terrainSize/2; z <= terrainSize/2; z += gridSpacing) {
-        positions.push([x, 0, z]); // Set y to 0, as height will be determined in the shader
-        //console.log([x, 0, z]);
-    }
+async function loadAndUseHeightData() {
+    const url = '../assets/img/file/everest.tif';
+    //const url = '../assets/img/file/test2.tif';
+    const heightData = await getHeightData(url);
+    imgText[0] = numberArray[0];
+    imgText[1] = numberArray[1];
+    console.log("numberarray");
+    console.log(numberArray);
+    return heightData;
 }
 
-//console.log("here");
-// Generate triangles (cells) for the grid
-const triangles: [number, number, number][] = [];
-for (let x = 0; x < verticesPerRow-1 ; x++) {
-    for (let z = 0; z < verticesPerRow -1; z++) {
-        let topLeft = x * verticesPerRow + z;
-        let topRight = topLeft + 1;
-        let bottomLeft = topLeft + verticesPerRow;
-        let bottomRight = bottomLeft  + 1;
+async function generateTerrainMesh() {
+    const heightData = await loadAndUseHeightData();
+    //console.log("imgarray");
+    //console.log(imgText);
+    const height = imgText[1];
+    const width = imgText[0];
+    //const height = 55;
+    //const width = 33;
+    const terrainSize = 1000;
+    const gridSpacing = 1;
+    const skip=20;
+    const uvrepeat=10;
+    const verticesPerRow = Math.floor(height/skip);
+    const verticesPerColumn = Math.floor(width/skip);
+    
 
-        // First triangle (top left triangle of the quad)
-        triangles.push([topLeft,  topRight,bottomLeft]);
-        /*console.log([topLeft,topRight, bottomLeft, bottomRight]);
-        console.log(positions[topLeft]);
-        
-        console.log(positions[topRight]);
-        console.log(positions[bottomLeft]);
-        console.log(positions[bottomRight]);*/
-        // Second triangle (bottom right triangle of the quad)
-        triangles.push([topRight, bottomRight,bottomLeft]);
-        //console.log([topRight, bottomLeft, bottomRight]);
+    const positions: [number, number, number][] = [];
+    const uvs: [number, number][] = [];
+    for (let x = 0; x <verticesPerColumn*skip; x+=skip) {
+        for (let z = 0; z <verticesPerRow*skip; z+=skip) {
+            const data=heightData[x+z*width];
+            //console.log(data);
+            positions.push([(x - width / 2)*gridSpacing, data, (z - height / 2)*gridSpacing]);
+            //positions.push([(x - width / 2)*gridSpacing, 0, (z - height / 2)*gridSpacing]);
+            uvs.push([x/(verticesPerRow*skip)*uvrepeat,verticesPerRow*skip-z/(verticesPerRow*skip)*uvrepeat]);
+        }
     }
+
+    const triangles: [number, number, number][] = [];
+    for (let x = 0; x < verticesPerColumn - 1; x++) {
+        for (let z = 0; z < verticesPerRow - 1; z++) {
+            let topLeft = x * verticesPerRow + z;
+            let topRight = topLeft + 1;
+            let bottomLeft = topLeft + verticesPerRow;
+            let bottomRight = bottomLeft + 1;
+
+            triangles.push([topLeft, topRight, bottomLeft]);
+            triangles.push([topRight, bottomRight, bottomLeft]);
+        }
+    }
+
+    const mesh = {
+        positions: positions as [number, number, number][],
+        triangles: triangles as [number, number, number][],
+        normals: [] as [number, number, number][],
+        uvs: uvs as [number, number][],
+    };
+
+    mesh.normals = computeSurfaceNormals(positions, triangles);
+
+    //mesh.uvs = computeProjectedPlaneUVs(positions);
+
+    return mesh;
 }
 
-// Compute normals and UVs using utility functions
-// Replace these calls with actual implementations from your 'utils' module
-
-export const mesh = {
-    positions: positions as [number, number, number][],
-    triangles: triangles as [number, number, number][],
-    normals: [] as [number, number, number][],
-    uvs: [] as [number, number][],
-};
-
-mesh.normals = computeSurfaceNormals(positions, triangles);
-mesh.uvs = computeProjectedPlaneUVs(positions);
+// Export the function that generates the terrain mesh
+export async function getTerrainMesh() {
+    return await generateTerrainMesh();
+}
