@@ -13,8 +13,31 @@ async function loadAndUseHeightData() {
     return heightData;
 }
 
-async function generateTerrainMesh() {
+async function createTextureFromImage(device: GPUDevice, src: string): Promise<GPUTexture> {
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+  
+    const imageBitmap = await createImageBitmap(img);
+    const texture = device.createTexture({
+      size: [imageBitmap.width, imageBitmap.height, 1],
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+  
+    device.queue.copyExternalImageToTexture(
+      { source: imageBitmap },
+      { texture: texture },
+      [imageBitmap.width, imageBitmap.height]
+    );
+  
+    return texture;
+}
+  
+
+async function generateTerrainMesh(device: GPUDevice): Promise<{ mesh: any, texture: GPUTexture }> {
     const heightData = await loadAndUseHeightData();
+    const texture = await createTextureFromImage(device, '../file/stone+mountain+rock-2048x2048.png');
     console.log("imgarray");
     console.log(imgText);
     const height = imgText[1];
@@ -57,10 +80,11 @@ async function generateTerrainMesh() {
     mesh.normals = computeSurfaceNormals(positions, triangles);
     mesh.uvs = computeProjectedPlaneUVs(positions);
 
-    return mesh;
+    return { mesh: mesh, texture };
 }
 
-// Export the function that generates the terrain mesh
-export async function getTerrainMesh() {
-    return await generateTerrainMesh();
+// Update this function to accept a GPUDevice parameter
+export async function getTerrainMesh(device: GPUDevice): Promise<{ mesh: any, texture: GPUTexture }> {
+    return await generateTerrainMesh(device);
 }
+

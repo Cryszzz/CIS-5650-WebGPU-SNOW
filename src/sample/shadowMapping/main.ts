@@ -57,7 +57,33 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     format: presentationFormat,
     alphaMode: 'premultiplied',
   });
-  const mesh=await getTerrainMesh();
+  //const mesh=await getTerrainMesh();
+  // At the beginning of the init function
+  const { mesh, texture } = await getTerrainMesh(device);
+  // Create a sampler for the texture
+  const sampler = device.createSampler({
+    magFilter: 'linear',
+    minFilter: 'linear',
+    addressModeU: 'repeat',
+    addressModeV: 'repeat',
+  });
+
+  // Create bind group layout and bind group for the texture and sampler
+  const textureBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
+    ],
+  });
+
+  const textureBindGroup = device.createBindGroup({
+    layout: textureBindGroupLayout,
+    entries: [
+      { binding: 0, resource: texture.createView() },
+      { binding: 1, resource: sampler },
+    ],
+  });
+
   // Create the model vertex buffer.
   const vertexBuffer = device.createBuffer({
     label: "vertex buffer",
@@ -192,7 +218,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
 
   const pipeline = device.createRenderPipeline({
     layout: device.createPipelineLayout({
-      bindGroupLayouts: [bglForRender, uniformBufferBindGroupLayout],
+      bindGroupLayouts: [bglForRender, uniformBufferBindGroupLayout, textureBindGroupLayout],
     }),
     vertex: {
       module: device.createShaderModule({
@@ -447,6 +473,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       renderPass.setPipeline(pipeline);
       renderPass.setBindGroup(0, sceneBindGroupForRender);
       renderPass.setBindGroup(1, modelBindGroup);
+      renderPass.setBindGroup(2, textureBindGroup); // Bind the texture and sampler
       renderPass.setVertexBuffer(0, vertexBuffer);
       renderPass.setIndexBuffer(indexBuffer, 'uint16');
       renderPass.drawIndexed(indexCount);
