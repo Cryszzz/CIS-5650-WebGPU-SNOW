@@ -51,6 +51,14 @@ struct WeatherData
 //   return SolarRadiation(sunrise, sunset, ri);
 // }
 
+//TODO: get solar radiation varying by time working
+fn solar_radiation(time: f32) -> SolarRadiation {
+  // let sunrise = 6.0;
+  // let sunset = 18.0;
+  // let ri = (sunset - sunrise) / 12;
+  // return SolarRadiation(sunrise, sunset, ri);
+}
+
 fn temp_simple_solar_radiation() ->SolarRadiation {
   return SolarRadiation(6.0, 18.0, 0.5);
 }
