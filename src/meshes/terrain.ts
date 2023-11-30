@@ -21,9 +21,10 @@ async function generateTerrainMesh() {
     const width = imgText[0];
     //const height = 4;
     //const width = 3;
-    const terrainSize = 1000;
+    // const terrainSize = 1000;
     const gridSpacing = 4;
     const verticesPerRow = height;
+    const snowGridSpacing = width / 80;
 
     const positions: [number, number, number][] = [];
     for (let x = 0; x <width; x++) {
@@ -31,6 +32,15 @@ async function generateTerrainMesh() {
             const data=heightData[x+z*width];
             //console.log(data);
             positions.push([(x - width / 2)*gridSpacing, data/100, (z - height / 2)*gridSpacing]);
+        }
+    }
+
+    const snowGridPositions: [number, number, number][] = [];
+    for (let x = 0; x <width; x++) {
+        for (let z = 0; z <height; z++) {
+            const data=heightData[x+z*width];
+            //console.log(data);
+            snowGridPositions.push([(x - width / 2)*snowGridSpacing, data/100, (z - height / 2)*snowGridSpacing]);
         }
     }
 
@@ -52,8 +62,9 @@ async function generateTerrainMesh() {
         triangles: triangles as [number, number, number][],
         normals: [] as [number, number, number][],
         uvs: [] as [number, number][],
-        width: width as number,
-        height: height as number,
+        snowGridPositions: [] as [number, number, number][],
+        // snowGridNormals: [] as [number, number, number][],
+        // snowGridUVs: [] as [number, number][],
     };
 
     mesh.normals = computeSurfaceNormals(positions, triangles);
