@@ -41,7 +41,7 @@ class TerrainCell {
   }
 }
 
-export class TerrainCellArray {
+class TerrainCellArray {
   private cells: TerrainCell[] = [];
 
   constructor(size: number);
@@ -65,26 +65,11 @@ export class TerrainCellArray {
       const elementSize = Float32Array.BYTES_PER_ELEMENT * Object.keys(new TerrainCell()).length;
       return this.cells.length * elementSize;
   }
-
-  getBuffer(): Float32Array {
-    const buffer = new Float32Array(this.getByteLength() / Float32Array.BYTES_PER_ELEMENT);
-    let offset = 0;
-
-    for (const cell of this.cells) {
-        // Iterate over each numeric property and set it in the buffer
-        for (const key in cell) {
-            if (typeof cell[key] === 'number') {
-                buffer[offset++] = cell[key];
-            }
-        }
-    }
-    return buffer;
-  }
 }
 
 class WeatherData {
-  Temperature: number = 0;
-  Precipitation: number = 0;
+  Temperature: number;
+  Precipitation: number;
 
   constructor(data?: { Temperature?: number; Precipitation?: number }) {
     if (data) {
@@ -95,19 +80,19 @@ class WeatherData {
   }
 }
 
-export class WeatherDataArray {
+class WeatherDataArray {
   private data: WeatherData[] = [];
 
   constructor(size: number);
   constructor(data: WeatherData[]);
-  constructor(size: number | WeatherData[]) {
+  constructor(arg: number | WeatherData[]) {
       // Initialize WeatherDataArray with size WeatherData objects, all values set to 0
-      if (typeof size === 'number') {
-          this.data = new Array(size).fill(undefined).map(() => new WeatherData());
+      if (typeof arg === 'number') {
+          this.data = new Array(arg).fill(undefined).map(() => new WeatherData());
       }
       // Initialize WeatherDataArray with provided data
       else {
-          this.data = size;
+          this.data = arg;
       }
   }
 
@@ -119,24 +104,9 @@ export class WeatherDataArray {
       const elementSize = Float32Array.BYTES_PER_ELEMENT * Object.keys(new WeatherData()).length;
       return this.data.length * elementSize;
   }
-
-  getBuffer(): Float32Array {
-    const buffer = new Float32Array(this.getByteLength() / Float32Array.BYTES_PER_ELEMENT);
-    let offset = 0;
-
-    for (const data of this.data) {
-        // Iterate over each numeric property and set it in the buffer
-        for (const key in data) {
-            if (typeof data[key] === 'number') {
-                buffer[offset++] = data[key];
-            }
-        }
-    }
-    return buffer;
-  }
 }
 
-export class SolarRadiation {
+class SolarRadiation {
   sunrise: number;
   sunset: number;
   ri: number;

@@ -2,7 +2,6 @@ struct Scene {
   lightViewProjMatrix: mat4x4<f32>,
   cameraViewProjMatrix: mat4x4<f32>,
   lightPos: vec3<f32>,
-  // time: f32,
 }
 
 struct Model {
@@ -48,10 +47,6 @@ fn worley(p: vec2<f32>) -> f32 {
     return d; // Return the smoothed distance
 }
 
-fn cos_time(time: f32) -> f32 {
-  return cos(time);
-}
-
 
 @vertex
 fn main(
@@ -60,28 +55,19 @@ fn main(
 ) -> VertexOutput {
   var output : VertexOutput;
 
-
- 
-  let update=3.0*sin(position.x/500*3.14)*sin(position.z/500*3.14);
-  let newposition=-vec3(position.x,update*40*worley( vec2(position.x,position.z)),position.z);
-  // let test_position : vec4<f32> = clamp(vec4(position.x, position.y * sin_time(scene.time), position.z, 1), vec4(0, 0, 0, 1), vec4(position, 1));
-  // let test_position : vec4<f32> = clamp(vec4(position.x, position.y * sin_time(scene.time), position.z, 1), vec4(0, 0, 0, 1), vec4(position, 1));
-  // let test_position : vec4<f32> = vec4(position.x, position.y * cos_time(scene.time), position.z, 1);
-  // var output_position : vec4<f32> = scene.cameraViewProjMatrix * model.modelMatrix * test_position;
-  
-    // XY is in (-1, 1) space, Z is in (0, 1) space
-  // let posFromLight = model.modelMatrix * test_position;
+  // XY is in (-1, 1) space, Z is in (0, 1) space
   let posFromLight = model.modelMatrix * vec4(position, 1.0);
+
   // Convert XY to (0, 1)
   // Y is flipped because texture coords are Y-down.
   output.shadowPos = vec3(
     posFromLight.xy * vec2(0.5, -0.5) + vec2(0.5),
     posFromLight.z
   );
-  
-  // var output_position : vec4<f32> = scene.cameraViewProjMatrix * model.modelMatrix * vec4(position, 1.0);
+ 
+  let update=3.0*sin(position.x/500*3.14)*sin(position.z/500*3.14);
+  let newposition=-vec3(position.x,update*40*worley( vec2(position.x,position.z)),position.z);
   output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4(position, 1.0);
-  // output.Position = output_position;  
   output.fragPos = output.Position.xyz;
   output.fragNorm = normal;
   return output;

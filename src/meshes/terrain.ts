@@ -52,6 +52,8 @@ async function generateTerrainMesh() {
         triangles: triangles as [number, number, number][],
         normals: [] as [number, number, number][],
         uvs: [] as [number, number][],
+        width: width as number,
+        height: height as number,
     };
 
     mesh.normals = computeSurfaceNormals(positions, triangles);
