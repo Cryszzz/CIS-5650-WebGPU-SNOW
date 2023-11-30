@@ -1,4 +1,8 @@
 class TerrainCell {
+  P0: [number, number, number] = [0, 0, 0];
+  P1: [number, number, number] = [0, 0, 0];
+  P2: [number, number, number] = [0, 0, 0];
+  P3: [number, number, number] = [0, 0, 0];
   Aspect: number = 0;
   Inclination: number = 0;
   Altitude: number = 0;
@@ -12,6 +16,10 @@ class TerrainCell {
   Curvature: number = 0;
 
   constructor(data?: {
+      P1?: [number, number, number];
+      P2?: [number, number, number];
+      P3?: [number, number, number];
+      P4?: [number, number, number];
       Aspect?: number;
       Inclination?: number;
       Altitude?: number;
@@ -26,6 +34,10 @@ class TerrainCell {
   }) {
       if (data) {
           // If data is provided, initialize properties with provided values
+          this.P0 = data.P1 ?? [0, 0, 0];
+          this.P1 = data.P2 ?? [0, 0, 0];
+          this.P2 = data.P3 ?? [0, 0, 0];
+          this.P3 = data.P4 ?? [0, 0, 0];
           this.Aspect = data.Aspect ?? 0;
           this.Inclination = data.Inclination ?? 0;
           this.Altitude = data.Altitude ?? 0;
@@ -49,11 +61,11 @@ class TerrainCellArray {
   constructor(size: number | TerrainCell[]) {
     // Initialize TerrainCellArray with size TerrainCell objects, all values set to 0
     if (typeof size === 'number') {
-        this.cells = new Array(size).fill(undefined).map(() => new TerrainCell());
+      this.cells = new Array(size).fill(undefined).map(() => new TerrainCell());
     }
     // Initialize TerrainCellArray with provided data
     else {
-        this.cells = size;
+      this.cells = size;
     }
   }
 
@@ -62,8 +74,12 @@ class TerrainCellArray {
   }
 
   getByteLength(): number {
-      const elementSize = Float32Array.BYTES_PER_ELEMENT * Object.keys(new TerrainCell()).length;
-      return this.cells.length * elementSize;
+    const elementSize = Float32Array.BYTES_PER_ELEMENT * Object.keys(new TerrainCell()).length;
+    return this.cells.length * elementSize;
+  }
+
+  getCell(index: number): TerrainCell | undefined {
+    return this.cells[index];
   }
 }
 
