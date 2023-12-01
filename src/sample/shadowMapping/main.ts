@@ -79,6 +79,17 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       [imageBitmap.width, imageBitmap.height]
     );
   }
+
+  const writableTexture = device.createTexture({
+    size: [mesh.width, mesh.height, 1],
+    format: 'rgba8unorm', // Adjust based on your requirements
+    usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.STORAGE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+
   const sampler = device.createSampler({
     magFilter: 'linear',
     minFilter: 'linear',
@@ -175,6 +186,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   });
 
      // Create a bind group layout
+
+  
   const bindGroupLayoutsnowCompute = device.createBindGroupLayout({
     entries: [
       {
@@ -187,8 +200,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       {
         binding: 1,
         visibility: GPUShaderStage.VERTEX,
-        texture: {
-          sampleType: 'float', // Adjust based on your texture data type
+        storageTexture:{
+          access: 'read-write',
+          format: 'rgba8unorm', // Adjust based on your texture data type
         },
       },
     ],
@@ -408,7 +422,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       },
       {
         binding: 1,
-        resource: cubeTexture.createView(),
+        resource: writableTexture.createView(),
       },
     ],
   });
