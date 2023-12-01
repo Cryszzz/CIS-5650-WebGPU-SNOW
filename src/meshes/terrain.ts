@@ -4,8 +4,8 @@ import { getHeightData, numberArray } from './geotiff-utils';
 var imgText: number[] = [0, 0];
 
 async function loadAndUseHeightData() {
-    const url = '../assets/img/file/everest.tif';
-    //const url = '../assets/img/file/test2.tif';
+    //const url = '../assets/img/file/everest.tif';
+    const url = '../assets/img/file/test2.tif';
     const heightData = await getHeightData(url);
     imgText[0] = numberArray[0];
     imgText[1] = numberArray[1];
