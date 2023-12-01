@@ -3,7 +3,6 @@ const PI:f32=3.1415926;
 //this is some constants values
 struct SimulationCS {
     MeasurementAltitude: f32,
-    MeasurementLongitude: f32,
     TSnowA:f32,
     TSnowB:f32,
     TMeltA:f32,
@@ -157,7 +156,7 @@ fn main(
               SnowAlbedo = 0.8; // New snow sets the albedo to 0.8
           }
       }
-      /*
+      
       // Apply melt
       if (SnowWaterEquivalent > 0) {
           if (DaysSinceLastSnowfall >= 0) {
@@ -195,7 +194,7 @@ fn main(
               SnowWaterEquivalent -= m;
             SnowWaterEquivalent = max(0.0, SnowWaterEquivalent);
         }
-      }*/
+      }
   //}
   
   return vec4(position, 1.0);
