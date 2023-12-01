@@ -90,7 +90,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   
   const vertexBuffer = device.createBuffer({
     label: "vertex buffer",
-    size: mesh.positions.length * 8 * Float32Array.BYTES_PER_ELEMENT,
+    size: mesh.positions.length * 18 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.VERTEX,
     mappedAtCreation: true,
   });
@@ -98,9 +98,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   {
     const mapping = new Float32Array(vertexBuffer.getMappedRange());
     for (let i = 0; i < mesh.positions.length; ++i) {
-      mapping.set(mesh.positions[i], 8 * i);
-      mapping.set(mesh.normals[i], 8 * i + 3);
-      mapping.set(mesh.uvs[i], 8 * i+6);
+      mapping.set(mesh.positions[i], 18 * i);
+      mapping.set(mesh.normals[i], 18 * i + 3);
+      mapping.set(mesh.uvs[i], 18 * i+6);
     }
     vertexBuffer.unmap();
   }
@@ -133,7 +133,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   // and the color rendering pipeline.
   const vertexBuffers: Iterable<GPUVertexBufferLayout> = [
     {
-      arrayStride: Float32Array.BYTES_PER_ELEMENT * 8,
+      arrayStride: Float32Array.BYTES_PER_ELEMENT * 18,
       attributes: [
         {
           // position
@@ -148,10 +148,76 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
           format: 'float32x3',
         },
         {
-          // normal
+          // uv
           shaderLocation: 2,
           offset: Float32Array.BYTES_PER_ELEMENT * 6,
           format: 'float32x2',
+        },
+        {
+          // uv
+          shaderLocation: 3,
+          offset: Float32Array.BYTES_PER_ELEMENT * 7,
+          format: 'float32',
+        },
+        {
+          // uv
+          shaderLocation: 4,
+          offset: Float32Array.BYTES_PER_ELEMENT * 8,
+          format: 'float32',
+        },
+        {
+          // uv
+          shaderLocation: 5,
+          offset: Float32Array.BYTES_PER_ELEMENT * 9,
+          format: 'float32',
+        },
+        {
+          // uv
+          shaderLocation: 6,
+          offset: Float32Array.BYTES_PER_ELEMENT * 10,
+          format: 'float32',
+        },
+        {
+          // uv
+          shaderLocation: 7,
+          offset: Float32Array.BYTES_PER_ELEMENT * 11,
+          format: 'float32',
+        },
+        {
+          // uv
+          shaderLocation: 8,
+          offset: Float32Array.BYTES_PER_ELEMENT * 12,
+          format: 'float32',
+        },
+        {
+          // uv
+          shaderLocation: 9,
+          offset: Float32Array.BYTES_PER_ELEMENT * 13,
+          format: 'float32',
+        },
+        {
+          // uv
+          shaderLocation: 10,
+          offset: Float32Array.BYTES_PER_ELEMENT * 14,
+          format: 'float32',
+        },
+        {
+          // uv
+          shaderLocation: 11,
+          offset: Float32Array.BYTES_PER_ELEMENT * 15,
+          format: 'float32',
+        },
+        {
+          // uv
+          shaderLocation: 12,
+          offset: Float32Array.BYTES_PER_ELEMENT * 16,
+          format: 'float32',
+        },
+        {
+          // uv
+          shaderLocation: 13,
+          offset: Float32Array.BYTES_PER_ELEMENT * 17,
+          format: 'float32',
         },
       ],
     },
