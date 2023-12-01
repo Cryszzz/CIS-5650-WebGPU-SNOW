@@ -148,7 +148,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
           format: 'float32x3',
         },
         {
-          // normal
+          // uv
           shaderLocation: 2,
           offset: Float32Array.BYTES_PER_ELEMENT * 6,
           format: 'float32x2',
@@ -174,11 +174,32 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     ],
   });
 
+     // Create a bind group layout
+  const bindGroupLayoutsnowCompute = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        texture: {
+          sampleType: 'float', // Adjust based on your texture data type
+        },
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.VERTEX,
+        texture: {
+          sampleType: 'float', // Adjust based on your texture data type
+        },
+      },
+    ],
+  });
+
   const shadowPipeline = device.createRenderPipeline({
     layout: device.createPipelineLayout({
       bindGroupLayouts: [
         uniformBufferBindGroupLayout,
         uniformBufferBindGroupLayout,
+        bindGroupLayoutsnowCompute,
       ],
     }),
     vertex: {
@@ -375,6 +396,23 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     ],
   });
 
+ 
+
+  // Create a bind group
+  const bindGroupsnowCompute = device.createBindGroup({
+    layout: bindGroupLayoutsnowCompute,
+    entries: [
+      {
+        binding: 0,
+        resource: cubeTexture.createView(),
+      },
+      {
+        binding: 1,
+        resource: cubeTexture.createView(),
+      },
+    ],
+  });
+
   const upVector = vec3.fromValues(0, 1, 0);
   const origin = vec3.fromValues(0, 0, 0);
 
@@ -494,6 +532,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       shadowPass.setPipeline(shadowPipeline);
       shadowPass.setBindGroup(0, sceneBindGroupForShadow);
       shadowPass.setBindGroup(1, modelBindGroup);
+      shadowPass.setBindGroup(2, bindGroupsnowCompute);
       shadowPass.setVertexBuffer(0, vertexBuffer);
       shadowPass.setIndexBuffer(indexBuffer, 'uint16');
       shadowPass.drawIndexed(indexCount);
