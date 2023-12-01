@@ -1,7 +1,7 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
 
-import { getTerrainMesh } from '../../meshes/terrain';
+import { getTerrainMesh, getTerrainCells } from '../../meshes/terrain';
 
 import vertexShadowWGSL from './vertexShadow.wgsl';
 import vertexWGSL from './vertex.wgsl';
@@ -9,7 +9,8 @@ import fragmentWGSL from './fragment.wgsl';
 import snowComputeWGSL from './snowCompute.wgsl';
 import { WASDCamera, cameraSourceInfo } from './camera';
 import { createInputHandler, inputSourceInfo } from './input';
-import './snowComputeInterfaces';
+import './weather';
+import { getWeatherData } from './weather';
 
 const shadowDepthTextureSize = 1024;
 const WORKGROUP_SIZE = 8;
@@ -62,6 +63,27 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     alphaMode: 'premultiplied',
   });
   const mesh=await getTerrainMesh();
+  const terrainCells = await getTerrainCells(mesh);
+
+  for (let i = 0; i < 200; i += 20) {
+    console.log("P0: " + i + " " + terrainCells.P0[i]);
+    console.log("P1: " + i + " " + terrainCells.P1[i]);
+    console.log("P2: " + i + " " + terrainCells.P2[i]);
+    console.log("P3: " + i + " " + terrainCells.P3[i]);
+    console.log("Aspect: " + i + " " + terrainCells.Aspect[i]);
+    console.log("Inclination: " + i + " " + terrainCells.Inclination[i]);
+    console.log("Altitude: " + i + " " + terrainCells.Altitude[i]);
+    console.log("Latitude: " + i + " " + terrainCells.Latitude[i]);
+    console.log("Area: " + i + " " + terrainCells.Area[i]);
+    console.log("AreaXZ: " + i + " " + terrainCells.AreaXZ[i]);
+    console.log("SnowWaterEquivalent: " + i + " " + terrainCells.SnowWaterEquivalent[i]);
+    console.log("InterpolatedSWE: " + i + " " + terrainCells.InterpolatedSWE[i]);
+    console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
+    console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
+    console.log("Curvature: " + i + " " + terrainCells.Curvature[i]);
+  }
+
+
   // Create the model vertex buffer.
   const vertexBuffer = device.createBuffer({
     label: "vertex buffer",
@@ -153,7 +175,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         binding: 1,
         visibility: GPUShaderStage.COMPUTE,
         buffer: {
-          type: 'read-only storage',
+          type: 'read-only-storage',
         }
       },
       {
@@ -343,33 +365,33 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   });
   device.queue.writeBuffer(gridSizeBuffer, 0, gridSizeArray.buffer); // TODO: move this to later
 
-  const terrainCellArray1 = new TerrainCellArray(GRID_SIZE * GRID_SIZE);
-  const terrainCellBuffer1 = device.createBuffer({
-    label: 'terrainCellBuffer',
-    size: terrainCellArray1.getByteLength(),
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-  });
+  // const terrainCellArray1 = new TerrainCellArray(GRID_SIZE * GRID_SIZE);
+  // const terrainCellBuffer1 = device.createBuffer({
+  //   label: 'terrainCellBuffer',
+  //   size: terrainCellArray1.getByteLength(),
+  //   usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  // });
 
-  const weatherDataArray = new WeatherDataArray(GRID_SIZE * GRID_SIZE);
-  const weatherDataBuffer = device.createBuffer({
-    label: 'weatherDataBuffer',
-    size: weatherDataArray.getByteLength(),
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
+  // const weatherDataArray = new WeatherDataArray(GRID_SIZE * GRID_SIZE);
+  // const weatherDataBuffer = device.createBuffer({
+  //   label: 'weatherDataBuffer',
+  //   size: weatherDataArray.getByteLength(),
+  //   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  // });
 
-  const solarRadiation = new SolarRadiation({sunrise: 0.0, sunset: 10.0, ri: 5.0}); // TODO: default numbers
-  const solarRadiationBuffer = device.createBuffer({
-    label: 'solarRadiationBuffer',
-    size: solarRadiation.getByteLength(),
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
+  // const solarRadiation = new SolarRadiation({sunrise: 0.0, sunset: 10.0, ri: 5.0}); // TODO: default numbers
+  // const solarRadiationBuffer = device.createBuffer({
+  //   label: 'solarRadiationBuffer',
+  //   size: solarRadiation.getByteLength(),
+  //   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  // });
 
-  const terrainCellArray2 = new TerrainCellArray(GRID_SIZE * GRID_SIZE);
-  const terrainCellBuffer2 = device.createBuffer({
-    label: 'terrainCellBuffer',
-    size: terrainCellArray2.getByteLength(),
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-  });
+  // const terrainCellArray2 = new TerrainCellArray(GRID_SIZE * GRID_SIZE);
+  // const terrainCellBuffer2 = device.createBuffer({
+  //   label: 'terrainCellBuffer',
+  //   size: terrainCellArray2.getByteLength(),
+  //   usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  // });
 
   const snowTexture = device.createTexture({ // TODO: figure out how to use this
     size: [GRID_SIZE, GRID_SIZE],
@@ -393,25 +415,31 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       {
         binding: 1,
         resource: {
-          buffer: terrainCellBuffer1,
+          // buffer: terrainCellBuffer1,
+          // dummy buffer to get rid of error
+          buffer: gridSizeBuffer,
+
         },
       },
       {
         binding: 2,
         resource: {
-          buffer: weatherDataBuffer,
+          // buffer: weatherDataBuffer,
+          buffer: gridSizeBuffer,
         },
       },
       {
         binding: 3,
         resource: {
-          buffer: solarRadiationBuffer,
+          // buffer: solarRadiationBuffer,
+          buffer: gridSizeBuffer,
         },
       },
       {
         binding: 4,
         resource: {
-          buffer: terrainCellBuffer2,
+          // buffer: terrainCellBuffer2,
+          buffer: gridSizeBuffer,
         },
       },
       {
@@ -565,6 +593,17 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const now = Date.now();
     const deltaTime = (now - lastFrameMS) / 1000;
     lastFrameMS = now;
+
+    if (now % 1000 > 995)
+    {
+      // let weatherData = await getWeatherData(now, mesh.width, mesh.height);
+      let weatherData = getWeatherData(now, mesh.width, mesh.height);
+      for (let i = 0; i < 10; i++) {
+        console.log("now: " + now);
+        console.log("temperature: " + weatherData.temperature[i]);
+        console.log("precipitation: " + weatherData.precipitation[i]);
+      }
+    }
 
     // Sample is no longer the active page.
     if (!pageState.active) return;

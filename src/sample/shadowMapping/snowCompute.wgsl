@@ -53,7 +53,8 @@ fn temp_simple_solar_radiation() ->SolarRadiation {
 }
 
 fn interpolate_swe(swe: f32, curvature: f32) -> f32 {
-  let f = inclination < 15 ? 0.0 : (inclination / 60);
+  // let f = inclination < 15 ? 0.0 : (inclination / 60);
+  let f = select(inclination / 60, 0, inclination < 15);
   let a3 = 50.0;
   return max(0.0f, swe * (1 - f) * (1 + a3 * curvature));
 }

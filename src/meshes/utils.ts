@@ -68,3 +68,19 @@ export function computeProjectedPlaneUVs(
   });
   return uvs;
 }
+
+export function degreesToRadians(degrees: number) {
+  return (degrees * Math.PI) / 180;
+}
+
+export function timeToDays(time: number) {
+  return time / (2000);
+}
+
+export function timeToHours(time: number) {
+  return time / (2000 * 24);
+}
+
+export function getDayOfYear(time: number) {
+  return Math.floor(timeToDays(time) % 365);
+}
