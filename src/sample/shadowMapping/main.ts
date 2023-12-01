@@ -66,6 +66,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   const terrainCells = await getTerrainCells(mesh);
 
   for (let i = 0; i < 200; i += 20) {
+    console.log("Terrain Cell: " + i)
     console.log("P0: " + i + " " + terrainCells.P0[i]);
     console.log("P1: " + i + " " + terrainCells.P1[i]);
     console.log("P2: " + i + " " + terrainCells.P2[i]);
@@ -600,8 +601,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       let weatherData = getWeatherData(now, mesh.width, mesh.height);
       for (let i = 0; i < 10; i++) {
         console.log("now: " + now);
-        console.log("temperature: " + weatherData.temperature[i]);
-        console.log("precipitation: " + weatherData.precipitation[i]);
+        console.log("weather for cell: " + (i * 20));
+        console.log("temperature: " + weatherData.temperature[i * 20]);
+        console.log("precipitation: " + weatherData.precipitation[i * 20]);
       }
     }
 
