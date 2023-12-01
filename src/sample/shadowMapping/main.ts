@@ -42,10 +42,11 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   // const camFolder = gui.addFolder("Camera");
   // camFolder.open();
   // camFolder.add(cameraParams, 'resetCamera').name("Reset Camera");
-
+  const feature = "chromium-experimental-read-write-storage-texture";
   const adapter = await navigator.gpu.requestAdapter();
-  const device = await adapter.requestDevice();
-
+  const device = await adapter.requestDevice({
+    //requiredFeatures: [feature],
+  });
   const context = canvas.getContext('webgpu') as GPUCanvasContext;
 
   const devicePixelRatio = window.devicePixelRatio;
@@ -201,7 +202,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         binding: 1,
         visibility: GPUShaderStage.VERTEX,
         storageTexture:{
-          access: 'read-write',
+          access: 'write-only',
           format: 'rgba8unorm', // Adjust based on your texture data type
         },
       },

@@ -11,7 +11,7 @@ struct Model {
 @group(0) @binding(0) var<uniform> scene : Scene;
 @group(1) @binding(0) var<uniform> model : Model;
 @group(2) @binding(0) var texture: texture_2d<f32>;
-@group(2) @binding(1) var texture2: texture_storage_2d<rgba8unorm, read_write>;
+@group(2) @binding(1) var texture2: texture_storage_2d<rgba8unorm, write>;
 
 @vertex
 fn main(
