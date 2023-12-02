@@ -1,5 +1,7 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
+import { WASDCamera, cameraSourceInfo } from './camera';
+import { createInputHandler, inputSourceInfo } from './input';
 
 import particleWGSL from './particle.wgsl';
 import probabilityMapWGSL from './probabilityMap.wgsl';
@@ -16,11 +18,35 @@ const particleInstanceByteSize =
   1 * 4 + // padding
   0;
 
+  
+function setCamera(x: number = 0, y: number = 300, z: number = -80)
+{
+  const initialCameraPosition = vec3.create(x, y, z);
+  const initialCameraTarget = vec3.create(0, 250, 0);
+  return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
+}
+
 const init: SampleInit = async ({ canvas, pageState, gui }) => {
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
 
   if (!pageState.active) return;
+
+  // The input handler
+  const inputHandler = createInputHandler(window, canvas);
+
+  // Camera initialization
+  let camera = setCamera();
+
+  const cameraParams = 
+  {
+    resetCamera() {
+      camera = setCamera();
+    }
+  };
+
+  gui.add(cameraParams, 'resetCamera').name("Reset Camera");
+
   const context = canvas.getContext('webgpu') as GPUCanvasContext;
 
   const devicePixelRatio = window.devicePixelRatio;
@@ -34,27 +60,37 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     alphaMode: 'premultiplied',
   });
 
-  const particlesBuffer = device.createBuffer({
-    size: numParticles * particleInstanceByteSize,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+  // Mesh
+  const mesh=await getTerrainMesh();
+  let cubeTexture: GPUTexture;
+  {
+    const response = await fetch('../assets/img/file/rock.png');
+    const imageBitmap = await createImageBitmap(await response.blob());
+
+    cubeTexture = device.createTexture({
+      size: [imageBitmap.width, imageBitmap.height, 1],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    device.queue.copyExternalImageToTexture(
+      { source: imageBitmap },
+      { texture: cubeTexture },
+      [imageBitmap.width, imageBitmap.height]
+    );
+  }
+
+  const sampler = device.createSampler({
+    magFilter: 'linear',
+    minFilter: 'linear',
+    mipmapFilter: 'linear',
+    addressModeU: 'repeat',
+    addressModeV: 'repeat',
+    addressModeW: 'repeat',
   });
 
-  const mesh=await getTerrainMesh();
-  const indexCount = mesh.triangles.length * 3;
-  console.log(mesh.triangles.length)
-  const indexBuffer = device.createBuffer({
-    label: "index buffer",
-    size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
-    usage: GPUBufferUsage.INDEX,
-    mappedAtCreation: true,
-  });
-  {
-    const mapping = new Uint16Array(indexBuffer.getMappedRange());
-    for (let i = 0; i < mesh.triangles.length; ++i) {
-      mapping.set(mesh.triangles[i], 3 * i);
-    }
-    indexBuffer.unmap();
-  }
   const vertexBuffer = device.createBuffer({
     label: "vertex buffer",
     size: mesh.positions.length * 8 * Float32Array.BYTES_PER_ELEMENT,
@@ -70,6 +106,13 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     }
     vertexBuffer.unmap();
   }
+
+
+  const particlesBuffer = device.createBuffer({
+    size: numParticles * particleInstanceByteSize,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+  });
+
   const vertexBuffers: Iterable<GPUVertexBufferLayout> = [
     {
       arrayStride: Float32Array.BYTES_PER_ELEMENT * 8,
@@ -95,13 +138,18 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       ],
     },
   ];
+
+  const primitive: GPUPrimitiveState = {
+    topology: 'triangle-list',
+    cullMode: 'back',
+  };
   const renderPipeline = device.createRenderPipeline({
     layout: 'auto',
     vertex: {
       module: device.createShaderModule({
         code: particleWGSL,
       }),
-      entryPoint: 'vs_main',
+      entryPoint: 'main',
       buffers: vertexBuffers,
     },
     fragment: {
@@ -127,9 +175,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         },
       ],
     },
-    primitive: {
-      topology: 'triangle-list',
-    },
+    primitive,
 
     depthStencil: {
       depthWriteEnabled: false,
@@ -201,6 +247,21 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   new Float32Array(quadVertexBuffer.getMappedRange()).set(vertexData);
   quadVertexBuffer.unmap();
 
+  const indexCount = mesh.triangles.length * 3;
+  console.log(mesh.triangles.length)
+  const indexBuffer = device.createBuffer({
+    label: "index buffer",
+    size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.INDEX,
+    mappedAtCreation: true,
+  });
+  {
+    const mapping = new Uint16Array(indexBuffer.getMappedRange());
+    for (let i = 0; i < mesh.triangles.length; ++i) {
+      mapping.set(mesh.triangles[i], 3 * i);
+    }
+    indexBuffer.unmap();
+  }
   //////////////////////////////////////////////////////////////////////////////
   // Texture
   //////////////////////////////////////////////////////////////////////////////
@@ -396,9 +457,29 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   const view = mat4.create();
   const mvp = mat4.create();
 
+
+  const modelViewProjectionMatrix = mat4.create();
+
+  const projectionMatrix = mat4.perspective(
+    (2 * Math.PI) / 5,
+    aspect,
+    1,
+    100.0 //2000.0
+  );
+  function getModelViewProjectionMatrix(deltaTime: number) {
+    const viewMatrix = camera.update(deltaTime, inputHandler());
+    mat4.multiply(projectionMatrix, viewMatrix, modelViewProjectionMatrix);
+    return modelViewProjectionMatrix as Float32Array;
+  }
+
+  let lastFrameMS = Date.now();
+
   function frame() {
     // Sample is no longer the active page.
     if (!pageState.active) return;
+    const now = Date.now();
+    const deltaTime = (now - lastFrameMS) / 1000;
+    lastFrameMS = now;
 
     device.queue.writeBuffer(
       simulationUBOBuffer,
@@ -419,11 +500,24 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     mat4.translate(view, vec3.fromValues(0, 0, -3), view);
     mat4.rotateX(view, Math.PI * -0.2, view);
     mat4.multiply(projection, view, mvp);
-
-    // prettier-ignore
-    device.queue.writeBuffer(
+    
+    const cameraViewProj = getModelViewProjectionMatrix(deltaTime);
+    //console.log(cameraViewProj.byteLength);
+    //console.log(cameraViewProj.buffer);
+    // // prettier-ignore
+    // Camera code
+    /*device.queue.writeBuffer(
       uniformBuffer,
       0,
+      cameraViewProj.buffer,
+      cameraViewProj.byteOffset,
+      cameraViewProj.byteLength
+    )*/
+
+    device.queue.writeBuffer(
+      uniformBuffer,
+      // 0,
+      64,
       new Float32Array([
         // modelViewProjectionMatrix
         mvp[0], mvp[1], mvp[2], mvp[3],

@@ -71,5 +71,16 @@ async function generateTerrainMesh() {
 
 // Export the function that generates the terrain mesh
 export async function getTerrainMesh() {
-    return await generateTerrainMesh();
+    //return await generateTerrainMesh();
+    const positions: [number, number, number][]= [[1.0,1.0,0.0],[1.0,-1.0,0.0],[-1.0,-1.0,0.0],[-1.0,1.0,0.0]];
+    const triangles: [number, number, number][]= [[0,1,2],[0,2,3]];
+    const mesh = {
+        positions: positions as [number, number, number][],
+        triangles: triangles as [number, number, number][],
+        normals: [] as [number, number, number][],
+        uvs: [] as [number, number][],
+    };
+    mesh.normals = computeSurfaceNormals(positions, triangles);
+    mesh.uvs = computeProjectedPlaneUVs(positions);
+    return mesh;
 }
