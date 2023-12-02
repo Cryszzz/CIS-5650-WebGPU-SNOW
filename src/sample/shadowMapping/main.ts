@@ -3,7 +3,11 @@ import { makeSample, SampleInit } from '../../components/SampleLayout';
 
 import particleWGSL from './particle.wgsl';
 import probabilityMapWGSL from './probabilityMap.wgsl';
-import { getTerrainMesh } from '../../meshes/terrain';
+import { getTerrainMesh, getTerrainCells } from '../../meshes/terrain';
+import { WASDCamera, cameraSourceInfo } from './camera';
+import { createInputHandler, inputSourceInfo } from './input';
+import { getWeatherData } from './weather';
+import { getDayOfYear, degreesToRadians, timeToDays, timeToHours} from '../../meshes/utils';
 
 const numParticles = 50000;
 const particlePositionOffset = 0;
@@ -16,12 +20,45 @@ const particleInstanceByteSize =
   1 * 4 + // padding
   0;
 
+const cameraDefaults = {
+  position: vec3.create(0, 300, -80),
+  target: vec3.create(0, 250, 0),
+  // position: vec3.create(0, 5, -5),
+  // target: vec3.create(0, 0, 0),
+};
+
+
+function setCamera(position?, target?)
+{
+  const initialCameraPosition = position ? position : cameraDefaults.position;
+  const initialCameraTarget = target ? target : cameraDefaults.target;
+  return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
+}
+
+
 const init: SampleInit = async ({ canvas, pageState, gui }) => {
+ 
+
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
 
   if (!pageState.active) return;
   const context = canvas.getContext('webgpu') as GPUCanvasContext;
+ 
+  // The input handler
+  const inputHandler = createInputHandler(window, canvas);
+
+  // Camera initialization
+  let camera = setCamera();
+
+  const cameraParams = 
+  {
+    resetCamera() {
+      camera = setCamera();
+    }
+  };
+
+  gui.add(cameraParams, 'resetCamera').name("Reset Camera");
 
   const devicePixelRatio = window.devicePixelRatio;
   canvas.width = canvas.clientWidth * devicePixelRatio;
@@ -40,8 +77,30 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   });
 
   const mesh=await getTerrainMesh();
+  const terrainCells = await getTerrainCells(mesh);
+
+  for (let i = 0; i < 200; i += 20) {
+    console.log("Terrain Cell: " + i)
+    console.log("P0: " + i + " " + terrainCells.P0[i]);
+    console.log("P1: " + i + " " + terrainCells.P1[i]);
+    console.log("P2: " + i + " " + terrainCells.P2[i]);
+    console.log("P3: " + i + " " + terrainCells.P3[i]);
+    console.log("Aspect: " + i + " " + terrainCells.Aspect[i]);
+    console.log("Inclination: " + i + " " + terrainCells.Inclination[i]);
+    console.log("Altitude: " + i + " " + terrainCells.Altitude[i]);
+    console.log("Latitude: " + i + " " + terrainCells.Latitude[i]);
+    console.log("Area: " + i + " " + terrainCells.Area[i]);
+    console.log("AreaXZ: " + i + " " + terrainCells.AreaXZ[i]);
+    console.log("SnowWaterEquivalent: " + i + " " + terrainCells.SnowWaterEquivalent[i]);
+    console.log("InterpolatedSWE: " + i + " " + terrainCells.InterpolatedSWE[i]);
+    console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
+    console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
+    console.log("Curvature: " + i + " " + terrainCells.Curvature[i]);
+  }
+
+
   const indexCount = mesh.triangles.length * 3;
-  console.log(mesh.triangles.length)
+  console.log("mesh.triangles.length: " + mesh.triangles.length)
   const indexBuffer = device.createBuffer({
     label: "index buffer",
     size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
@@ -396,9 +455,43 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   const view = mat4.create();
   const mvp = mat4.create();
 
+  const projectionMatrix = mat4.perspective(
+    (2 * Math.PI) / 5,
+    aspect,
+    1,
+    2000.0
+  );
+
+  const modelViewProjectionMatrix = mat4.create();
+
+  function getModelViewProjectionMatrix(deltaTime: number) {
+    const viewMatrix = camera.update(deltaTime, inputHandler());
+    mat4.multiply(projectionMatrix, viewMatrix, modelViewProjectionMatrix);
+    return modelViewProjectionMatrix as Float32Array;
+  }
+
+  let lastFrameMS = Date.now();
+
   function frame() {
     // Sample is no longer the active page.
     if (!pageState.active) return;
+    const now = Date.now();
+    const deltaTime = (now - lastFrameMS) / 1000;
+    lastFrameMS = now;
+
+    if (now % 1000 > 998)
+    {
+      // let weatherData = await getWeatherData(now, mesh.width, mesh.height);
+      let weatherData = getWeatherData(now, mesh.width, mesh.height);
+      // for (let i = 0; i < 10; i++) {
+      //   console.log("now: " + now);
+      //   console.log("day of year: " + getDayOfYear(now));
+      //   console.log("weather for cell: " + (i * 20));
+        // console.log("temperature: " + weatherData.temperature[i * 20]);
+        // console.log("temperature: " + weatherData.temperature[20]);
+      //   console.log("precipitation: " + weatherData.precipitation[i * 20]);
+      // }
+    }
 
     device.queue.writeBuffer(
       simulationUBOBuffer,
@@ -420,16 +513,25 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     mat4.rotateX(view, Math.PI * -0.2, view);
     mat4.multiply(projection, view, mvp);
 
-    // prettier-ignore
+    const cameraViewProj = getModelViewProjectionMatrix(deltaTime);
     device.queue.writeBuffer(
       uniformBuffer,
       0,
+      cameraViewProj.buffer,
+      cameraViewProj.byteOffset,
+      cameraViewProj.byteLength
+    )
+
+    // prettier-ignore
+    device.queue.writeBuffer(
+      uniformBuffer,
+      64,
       new Float32Array([
         // modelViewProjectionMatrix
-        mvp[0], mvp[1], mvp[2], mvp[3],
-        mvp[4], mvp[5], mvp[6], mvp[7],
-        mvp[8], mvp[9], mvp[10], mvp[11],
-        mvp[12], mvp[13], mvp[14], mvp[15],
+        // mvp[0], mvp[1], mvp[2], mvp[3],
+        // mvp[4], mvp[5], mvp[6], mvp[7],
+        // mvp[8], mvp[9], mvp[10], mvp[11],
+        // mvp[12], mvp[13], mvp[14], mvp[15],
 
         view[0], view[4], view[8], // right
 
