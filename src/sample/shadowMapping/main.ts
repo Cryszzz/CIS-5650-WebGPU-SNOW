@@ -98,8 +98,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     console.log("Curvature: " + i + " " + terrainCells.Curvature[i]);
   }
 
-
+  
   const indexCount = mesh.triangles.length * 3;
+  console.log("buffer size"+indexCount * Uint16Array.BYTES_PER_ELEMENT);
   console.log("mesh.triangles.length: " + mesh.triangles.length)
   const indexBuffer = device.createBuffer({
     label: "index buffer",
@@ -120,6 +121,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     usage: GPUBufferUsage.VERTEX,
     mappedAtCreation: true,
   });
+  
   {
     const mapping = new Float32Array(vertexBuffer.getMappedRange());
     for (let i = 0; i < mesh.positions.length; ++i) {
@@ -171,35 +173,24 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       targets: [
         {
           format: presentationFormat,
-          blend: {
-            color: {
-              srcFactor: 'src-alpha',
-              dstFactor: 'one',
-              operation: 'add',
-            },
-            alpha: {
-              srcFactor: 'zero',
-              dstFactor: 'one',
-              operation: 'add',
-            },
-          },
         },
       ],
     },
     primitive: {
       topology: 'triangle-list',
+      //cullMode: 'back',
     },
 
     depthStencil: {
-      depthWriteEnabled: false,
+      depthWriteEnabled: true,
       depthCompare: 'less',
-      format: 'depth24plus',
+      format: 'depth24plus-stencil8',
     },
   });
 
   const depthTexture = device.createTexture({
     size: [canvas.width, canvas.height],
-    format: 'depth24plus',
+    format: 'depth24plus-stencil8',
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
@@ -242,6 +233,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       depthClearValue: 1.0,
       depthLoadOp: 'clear',
       depthStoreOp: 'store',
+      stencilClearValue: 0,
+      stencilLoadOp: 'clear',
+      stencilStoreOp: 'store',
     },
   };
 

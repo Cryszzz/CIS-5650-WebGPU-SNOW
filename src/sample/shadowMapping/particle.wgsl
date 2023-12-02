@@ -28,14 +28,15 @@ struct RenderParams {
 
 struct VertexInput {
   @location(0) position : vec3<f32>,
-  @location(1) color : vec3<f32>,
-  @location(2) quad_pos : vec2<f32>, // -1..+1
+  @location(1) normal : vec3<f32>,
+  @location(2) uv: vec2<f32>, // -1..+1
 }
 
 struct VertexOutput {
-  @builtin(position) position : vec4<f32>,
-  @location(0) color : vec4<f32>,
-  @location(1) quad_pos : vec2<f32>, // -1..+1
+  @builtin(position) Position : vec4<f32>,
+  @location(0) position: vec3<f32>,
+  @location(1) normal : vec3<f32>,
+  @location(2) uv : vec2<f32>, // -1..+1
 }
 
 @vertex
@@ -43,9 +44,10 @@ fn vs_main(in : VertexInput) -> VertexOutput {
   //var quad_pos = mat2x3<f32>(render_params.right, render_params.up) * in.quad_pos;
   //var position = in.position;
   var out : VertexOutput;
-  out.position = render_params.modelViewProjectionMatrix * vec4<f32>(in.position, 1.0);
-  //out.color = in.color;
-  //out.quad_pos = in.quad_pos;
+  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(in.position, 1.0);
+  out.position=in.position;
+  out.normal = in.normal;
+  out.uv = in.uv;
   return out;
 }
 
@@ -69,9 +71,15 @@ fn main(
 ////////////////////////////////////////////////////////////////////////////////
 // Fragment shader
 ////////////////////////////////////////////////////////////////////////////////
+
+const lightPos : vec3<f32>= vec3<f32> (50.0, 100.0, -100.0);
+const lightDir : vec3<f32>= vec3<f32> (1.0, -1.0, 0.0);
+const ambientFactor = 0.2;
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
-  var color = vec4(albedo.xyz,1.0f);
+  let lambertFactor = max(dot(normalize(-lightDir), in.normal), 0.0);
+  let lightingFactor = min(ambientFactor + lambertFactor, 1.0);
+  var color = vec4(lightingFactor*albedo.xyz,1.0);
   // Apply a circular particle alpha mask
   //color.a = color.a * max(1.0 - length(in.quad_pos), 0.0);
   return color;
