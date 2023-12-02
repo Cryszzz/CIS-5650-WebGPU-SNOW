@@ -20,6 +20,25 @@ const particleInstanceByteSize =
   1 * 4 + // padding
   0;
 
+const terrainCellByteSize =
+  1 * 4 + // Aspect
+  1 * 4 + // Inclination
+  1 * 4 + // Altitude
+  1 * 4 + // Latitude
+  1 * 4 + // Area
+  1 * 4 + // AreaXZ
+  1 * 4 + // SnowWaterEquivalent
+  1 * 4 + // InterpolatedSWE
+  1 * 4 + // SnowAlbedo
+  1 * 4 + // DaysSinceLastSnowfall
+  1 * 4 + // Curvature
+  0;
+
+const weatherCellByteSize =
+  1 * 4 + // Temperature
+  1 * 4 + // Precipitation
+  0;
+
 const cameraDefaults = {
   position: vec3.create(0, 300, -80),
   target: vec3.create(0, 250, 0),
@@ -98,6 +117,10 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     console.log("Curvature: " + i + " " + terrainCells.Curvature[i]);
   }
 
+  const weatherBuffer =  device.createBuffer({
+    size: mesh.width * mesh.height * weatherCellByteSize,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  });
   
   const indexCount = mesh.triangles.length * 3;
   console.log("buffer size"+indexCount * Uint16Array.BYTES_PER_ELEMENT);
@@ -515,7 +538,35 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const deltaTime = (now - lastFrameMS) / 1000;
     lastFrameMS = now;
     //TODO: how to bind weather Data per frame
+    // Can pass it in another storage buffer with each terrain cell, because currently I have weather data per cell
+    // I think our bindings can be like this:
+    // 1. terrainCell storage buffer 1 
+    // 2. terrainCell storage buffer 2 (for ping-ponging)
+    // 2. weather storage buffer (separately, because at the moment this is calculated on CPU.
+    // So this will need to be passed in every frame. I'll work on moving this to the compute shader later)
+
     let weatherData = getWeatherData(now, mesh.width, mesh.height);
+
+    for (let i = 0; i < 200; i += 20) {
+      console.log("Temperature: " + i + " " + weatherData.temperature[i]);
+      console.log("Precipitation: " + i + " " + weatherData.precipitation[i]);
+    }
+
+
+    // Same as terrain cells; one weatherData for each cell - this mayyyy be very slow
+    const weatherMapping = new Float32Array(2 * mesh.width * mesh.height);
+    for (let i = 0; i < mesh.width * mesh.height; ++i) {
+      weatherMapping.set([weatherData.temperature[i]], 2 * i);
+      weatherMapping.set([weatherData.precipitation[i]], 2 * i + 1);
+    }
+    // I have not actually bound this yet
+    device.queue.writeBuffer(
+      weatherBuffer,
+      0,
+      weatherMapping.buffer,
+      weatherMapping.byteOffset,
+      weatherMapping.byteLength
+    )
 
     if (now % 1000 > 998)
     {

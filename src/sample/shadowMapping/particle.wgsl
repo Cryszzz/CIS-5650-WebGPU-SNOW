@@ -15,11 +15,7 @@ struct SimulationCS {
 };
 const SimulationCSConstants: SimulationCS = SimulationCS(0.0,0.0,2.0,-5.0,-2.0,0.2,4.0);
 
-struct WeatherData
-{
-	Temperature:f32,
-	Precipitation:f32,
-};
+
 
 fn init_rand(invocation_id : u32, seed : vec4<f32>) {
   rand_seed = seed.xz;
@@ -220,6 +216,12 @@ struct Cell {
 struct Cells {
   cells : array<Cell>,
 }
+
+struct WeatherData
+{
+	Temperature:f32,
+	Precipitation:f32,
+};
 
 @binding(0) @group(0) var<uniform> sim_params : SimulationParams;
 @binding(1) @group(0) var<storage, read_write> data : Particles;
