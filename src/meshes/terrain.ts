@@ -7,8 +7,8 @@ var imgText: number[] = [0, 0];
 const EPSILON = 0.00001;
 
 async function loadAndUseHeightData() {
-    //const url = '../assets/img/file/everest.tif';
-    const url = '../assets/img/file/test2.tif';
+    const url = '../assets/img/file/everest.tif';
+    //const url = '../assets/img/file/test2.tif';
     const heightData = await getHeightData(url);
     imgText[0] = numberArray[0];
     imgText[1] = numberArray[1];
@@ -28,7 +28,7 @@ async function generateTerrainMesh() {
     const terrainSize = 1000;
     const gridSpacing = 1;
     // const gridSpacing = 4;
-    const skip=40;
+    const skip=2;
     const uvrepeat=1;
     const verticesPerRow = Math.floor((Math.floor(height/skip)-1)/2)*2+1;
     const verticesPerColumn = Math.floor((Math.floor(width/skip)-1)/2)*2+1;
@@ -43,9 +43,9 @@ async function generateTerrainMesh() {
           // console.log(`x: ${x}, z: ${z}, dataIndex: ${dataIndex}, heightData[dataIndex]: ${heightData[dataIndex]}`);
 
 
-          const data=heightData[x+z*width];
+          const data=heightData[x*height+z];
           //console.log(data);
-          positions.push([(x - width / 2)*gridSpacing, data, (z - height / 2)*gridSpacing]);
+          positions.push([(x - width / 2)*gridSpacing, data/100, (z - height / 2)*gridSpacing]);
           //positions.push([(x - width / 2)*gridSpacing, 0, (z - height / 2)*gridSpacing]);
           uvs.push([x/(verticesPerRow*skip)*uvrepeat,verticesPerRow*skip-z/(verticesPerRow*skip)*uvrepeat]);
       }
