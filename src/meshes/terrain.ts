@@ -29,7 +29,7 @@ async function generateTerrainMesh() {
     const gridSpacing = 1;
     // const gridSpacing = 4;
     const skip=40;
-    const uvrepeat=10;
+    const uvrepeat=1;
     const verticesPerRow = Math.floor((Math.floor(height/skip)-1)/2)*2+1;
     const verticesPerColumn = Math.floor((Math.floor(width/skip)-1)/2)*2+1;
     console.log("verticesPerRow"+verticesPerRow );

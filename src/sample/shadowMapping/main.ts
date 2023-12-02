@@ -193,7 +193,15 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     format: 'depth24plus-stencil8',
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
-
+  const writableTexture = device.createTexture({
+    size: [mesh.width, mesh.height, 1],
+    format: 'rgba8unorm', // Adjust based on your requirements
+    usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.STORAGE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+  });
   const uniformBufferSize =
     4 * 4 * 4 + // modelViewProjectionMatrix : mat4x4<f32>
     3 * 4 + // right : vec3<f32>
@@ -214,6 +222,10 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         resource: {
           buffer: uniformBuffer,
         },
+      },
+      {
+        binding: 1,
+        resource: writableTexture.createView(),
       },
     ],
   });
@@ -257,6 +269,26 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   //////////////////////////////////////////////////////////////////////////////
   // Texture
   //////////////////////////////////////////////////////////////////////////////
+  let cubeTexture: GPUTexture;
+  {
+    const response = await fetch('../assets/img/file/rock.png');
+    const imageBitmap = await createImageBitmap(await response.blob());
+
+    cubeTexture = device.createTexture({
+      size: [imageBitmap.width, imageBitmap.height, 1],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    device.queue.copyExternalImageToTexture(
+      { source: imageBitmap },
+      { texture: cubeTexture },
+      [imageBitmap.width, imageBitmap.height]
+    );
+  }
+  
   let texture: GPUTexture;
   let textureWidth = 1;
   let textureHeight = 1;
@@ -401,6 +433,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     1 * 4 + // deltaTime
     3 * 4 + // padding
     4 * 4 + // seed
+    4 * 4 + //temp+perci
     0;
   const simulationUBOBuffer = device.createBuffer({
     size: simulationUBOBufferSize,
@@ -439,7 +472,16 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       },
       {
         binding: 2,
-        resource: texture.createView(),
+        resource: cubeTexture.createView(),
+      },
+      {
+        binding: 3,
+        //resource: cubeTexture.createView(),
+        resource: writableTexture.createView({
+            format: 'rgba8unorm',
+            dimension: '2d',
+          }
+        ),
       },
     ],
   });
@@ -472,11 +514,13 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const now = Date.now();
     const deltaTime = (now - lastFrameMS) / 1000;
     lastFrameMS = now;
+    //TODO: how to bind weather Data per frame
+    let weatherData = getWeatherData(now, mesh.width, mesh.height);
 
     if (now % 1000 > 998)
     {
       // let weatherData = await getWeatherData(now, mesh.width, mesh.height);
-      let weatherData = getWeatherData(now, mesh.width, mesh.height);
+      
       // for (let i = 0; i < 10; i++) {
       //   console.log("now: " + now);
       //   console.log("day of year: " + getDayOfYear(now));
@@ -499,6 +543,10 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         Math.random() * 100, // seed.xy
         1 + Math.random(),
         1 + Math.random(), // seed.zw
+        weatherData.temperature[0], //TODO: how to bind weather Data per frame
+        weatherData.precipitation[0], //TODO: how to bind weather Data per frame
+        0.0,
+        0.0,//padding
       ])
     );
 
@@ -545,7 +593,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       const passEncoder = commandEncoder.beginComputePass();
       passEncoder.setPipeline(computePipeline);
       passEncoder.setBindGroup(0, computeBindGroup);
-      passEncoder.dispatchWorkgroups(Math.ceil(numParticles / 64));
+      passEncoder.dispatchWorkgroups(Math.ceil(mesh.width / 8),Math.ceil(mesh.height / 8));
       passEncoder.end();
     }
     {
