@@ -109,10 +109,11 @@ struct VertexInput {
 }
 
 struct VertexOutput {
-  @builtin(position) Position : vec4<f32>,
   @location(0) position: vec3<f32>,
   @location(1) normal : vec3<f32>,
   @location(2) uv : vec2<f32>, // -1..+1
+
+  @builtin(position) Position : vec4<f32>,
 }
 
 @vertex
@@ -159,8 +160,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   var textDim=vec2<f32>(textureDimensions(fragtexture).xy);
   var coord : vec2<i32>=vec2<i32>(0,0);
   coord.x=i32(in.uv.x*textDim.x);
-  coord.y=i32(in.uv.y*textDim.y);
-  var testcolor = textureLoad(fragtexture, coord, 0);
+  coord.y=i32(in.uv.x*textDim.x);//i32(in.uv.y*textDim.y);
+  var testcolor = textureLoad(fragtexture, coord.xy, 0);
   
   let lambertFactor = max(dot(normalize(-lightDir), in.normal), 0.0);
   let lightingFactor = min(ambientFactor + lambertFactor, 1.0);
@@ -224,7 +225,7 @@ struct WeatherData
 };
 
 @binding(0) @group(0) var<uniform> sim_params : SimulationParams;
-@binding(1) @group(0) var<storage, read_write> data : Particles;
+@binding(1) @group(0) var<storage, read_write> data : Cells;
 @binding(2) @group(0) var texture : texture_2d<f32>;
 @binding(3) @group(0) var texture2 : texture_storage_2d<rgba8unorm, write>;
 
@@ -232,17 +233,17 @@ struct WeatherData
 fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
   let idx = global_invocation_id.x;
   var textDim=vec2<i32>(textureDimensions(texture).xy);
-  var text2Dim=vec2<i32>(textureDimensions(texture).xy);
+  var text2Dim=vec2<i32>(textureDimensions(texture2).xy);
   var coord : vec2<i32>=vec2<i32>(global_invocation_id.xy);
 
   init_rand(idx, sim_params.seed);
   var loadcoord : vec2<i32>=vec2<i32>(0,0);
   loadcoord.x=i32(coord.x/text2Dim.x*textDim.x);
   loadcoord.y=i32(coord.y/text2Dim.y*textDim.y);
-  var color = textureLoad(texture, coord, 0);
+  var color = textureLoad(texture, loadcoord, 0);
   
-  textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(1.0,1.0,1.0,1.0));
-  var particle = data.particles[idx];
+  textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(color.xyz,1.0));
+  var particle = data.cells[idx];
 
 
   // Apply gravity

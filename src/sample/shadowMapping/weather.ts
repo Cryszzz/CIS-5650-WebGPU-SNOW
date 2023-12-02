@@ -38,7 +38,7 @@ export const getWeatherData = (time: number, width: number, height: number) => {
     }
   }
 
-  console.log("weather point 1");
+  //console.log("weather point 1");
 
   let deltaTimeHours = Math.floor(timeToHours(deltaTime));
   let weatherData : {
@@ -68,7 +68,7 @@ export const getWeatherData = (time: number, width: number, height: number) => {
       let precipitation = 0;
       if (x === 0 && z === 0 || x == width - 2 && z == height - 2)
       {
-        console.log("weather point 2");
+        //console.log("weather point 2");
       }
 
       // calculate precipitation

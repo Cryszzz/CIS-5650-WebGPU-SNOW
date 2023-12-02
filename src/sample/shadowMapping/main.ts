@@ -20,6 +20,11 @@ const particleInstanceByteSize =
   1 * 4 + // padding
   0;
 
+const cellInstanceByteSize =
+  11 * 4 + // data
+  1 * 4 + // padding
+  0;
+
 const terrainCellByteSize =
   1 * 4 + // Aspect
   1 * 4 + // Inclination
@@ -95,6 +100,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
   });
 
+  
+
   const mesh=await getTerrainMesh();
   const terrainCells = await getTerrainCells(mesh);
 
@@ -116,7 +123,32 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
     console.log("Curvature: " + i + " " + terrainCells.Curvature[i]);
   }
-
+  const cellBuffer = device.createBuffer({
+    size: terrainCells.Aspect.length * cellInstanceByteSize,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+    mappedAtCreation: true,
+  });
+  {
+    const mapping = new Float32Array(cellBuffer.getMappedRange());
+    for (let i = 0; i < terrainCells.Aspect.length; i++){
+      mapping.set([
+        terrainCells.Aspect[i],
+        terrainCells.Inclination[i],
+        terrainCells.Altitude[i],
+        terrainCells.Latitude[i],
+        terrainCells.Area[i],
+        terrainCells.AreaXZ[i],
+        terrainCells.SnowWaterEquivalent[i],
+        terrainCells.InterpolatedSWE[i],
+        terrainCells.SnowAlbedo[i],
+        terrainCells.DaysSinceLastSnowfall[i],
+        terrainCells.Curvature[i],
+        0.0,
+      ],i*12);
+    }
+    cellBuffer.unmap();
+  }
+  
   const weatherBuffer =  device.createBuffer({
     size: mesh.width * mesh.height * weatherCellByteSize,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -236,7 +268,25 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     size: uniformBufferSize,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
+  let cubeTexture: GPUTexture;
+  {
+    const response = await fetch('../assets/img/file/rock.png');
+    const imageBitmap = await createImageBitmap(await response.blob());
 
+    cubeTexture = device.createTexture({
+      size: [imageBitmap.width, imageBitmap.height, 1],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    device.queue.copyExternalImageToTexture(
+      { source: imageBitmap },
+      { texture: cubeTexture },
+      [imageBitmap.width, imageBitmap.height]
+    );
+  }
   const uniformBindGroup = device.createBindGroup({
     layout: renderPipeline.getBindGroupLayout(0),
     entries: [
@@ -248,7 +298,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       },
       {
         binding: 1,
-        resource: writableTexture.createView(),
+        resource: cubeTexture.createView(),
       },
     ],
   });
@@ -292,25 +342,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   //////////////////////////////////////////////////////////////////////////////
   // Texture
   //////////////////////////////////////////////////////////////////////////////
-  let cubeTexture: GPUTexture;
-  {
-    const response = await fetch('../assets/img/file/rock.png');
-    const imageBitmap = await createImageBitmap(await response.blob());
-
-    cubeTexture = device.createTexture({
-      size: [imageBitmap.width, imageBitmap.height, 1],
-      format: 'rgba8unorm',
-      usage:
-        GPUTextureUsage.TEXTURE_BINDING |
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-    device.queue.copyExternalImageToTexture(
-      { source: imageBitmap },
-      { texture: cubeTexture },
-      [imageBitmap.width, imageBitmap.height]
-    );
-  }
+  
   
   let texture: GPUTexture;
   let textureWidth = 1;
@@ -488,9 +520,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       {
         binding: 1,
         resource: {
-          buffer: particlesBuffer,
+          buffer: cellBuffer,
           offset: 0,
-          size: numParticles * particleInstanceByteSize,
+          size: terrainCells.Aspect.length * cellInstanceByteSize,
         },
       },
       {
@@ -570,7 +602,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
 
     if (now % 1000 > 998)
     {
-      // let weatherData = await getWeatherData(now, mesh.width, mesh.height);
+      weatherData = getWeatherData(now, mesh.width, mesh.height);
       
       // for (let i = 0; i < 10; i++) {
       //   console.log("now: " + now);
@@ -594,8 +626,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         Math.random() * 100, // seed.xy
         1 + Math.random(),
         1 + Math.random(), // seed.zw
-        weatherData.temperature[0], //TODO: how to bind weather Data per frame
-        weatherData.precipitation[0], //TODO: how to bind weather Data per frame
+        0.0, //TODO: bind weather Data temperature per frame
+        0.0, //TODO: bind weather Data percipitation per frame
         0.0,
         0.0,//padding
       ])
