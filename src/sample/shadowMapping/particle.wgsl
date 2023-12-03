@@ -166,7 +166,13 @@ fn main(
 const lightPos : vec3<f32>= vec3<f32> (50.0, 100.0, -100.0);
 const lightDir : vec3<f32>= vec3<f32> (1.0, -1.0, 0.0);
 const ambientFactor = 0.2;
+/*
+CRYSTAL: There are two texture bind to fragment shader
+fragtexture: the texture buffer that got from compute pipeline
+origtexture: the texture buffer that is the original texture
 
+They varies in resolution, better to interpolate values for final result, but rn, change between these two to test whether we have correct computation.
+*/
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
@@ -174,8 +180,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   var textDim=vec2<i32>(textureDimensions(fragtexture).xy);
   var textorigDim=vec2<i32>(textureDimensions(origtexture).xy);
   var coord : vec2<i32>=vec2<i32>(0,0);
-  //coord.x=i32(in.uv.x*textDim.x);
-  //coord.y=i32(in.uv.x*textDim.x);//i32(in.uv.y*textDim.y);
+
+  //CRYSTAL: change following three lines of code for testing different textures
   coord.x=i32(f32(textorigDim.x)*in.uv.x);
   coord.y=i32(f32(textorigDim.y)*in.uv.y);
   var testcolor = textureLoad(origtexture, coord.xy, 0);
@@ -252,11 +258,15 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     var loadcoord : vec2<i32>=vec2<i32>(0,0);
     loadcoord.x=i32(coord.x*textDim.x/text2Dim.x);
     loadcoord.y=i32(coord.y*textDim.y/text2Dim.y);
+    //CRYSTAL: color from original texture
     var color = textureLoad(texture, loadcoord, 0);
     
+    //CRYSTAL: here is example of how to store color to texture, just modify color.xyz to change color
     textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(color.xyz,1.0));
-    var celldata = data.cells[idx];
 
+
+    //CRYSTAL: starting from this part, use the same code from that unreal project
+    var celldata = data.cells[idx];
     var areaSquareMeters:f32 = celldata.AreaXY / (100.0 * 100.0); // m^2
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
@@ -334,6 +344,7 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             celldata.SnowWaterEquivalent = max(0.0, celldata.SnowWaterEquivalent);
         }
     }
+    data.cells[idx] = celldata;
 
 
   // Apply gravity
