@@ -85,7 +85,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
 
   const mesh=await getTerrainMesh();
   const terrainCells = await getTerrainCells(mesh);
-
+  console.log(terrainCells.Size);
+  /*
   for (let i = 0; i < 200; i += 20) {
     console.log("Terrain Cell: " + i)
     console.log("P0: " + i + " " + terrainCells.P0[i]);
@@ -103,15 +104,15 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
     console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
     console.log("Curvature: " + i + " " + terrainCells.Curvature[i]);
-  }
+  }*/
   const cellBuffer = device.createBuffer({
-    size: terrainCells.Aspect.length * cellInstanceByteSize,
+    size: terrainCells.Size * cellInstanceByteSize,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
     mappedAtCreation: true,
   });
   {
     const mapping = new Float32Array(cellBuffer.getMappedRange());
-    for (let i = 0; i < terrainCells.Aspect.length; i++){
+    for (let i = 0; i < terrainCells.Size; i++){
       mapping.set([
         terrainCells.Aspect[i],
         terrainCells.Inclination[i],
@@ -226,7 +227,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
   const writableTexture = device.createTexture({
-    size: [mesh.width, mesh.height, 1],
+    size: [mesh.width-1, mesh.height-1, 1],
     format: 'rgba8unorm', // Adjust based on your requirements
     usage:
         GPUTextureUsage.TEXTURE_BINDING |
@@ -504,7 +505,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         resource: {
           buffer: cellBuffer,
           offset: 0,
-          size: terrainCells.Aspect.length * cellInstanceByteSize,
+          size: terrainCells.Size * cellInstanceByteSize,
         },
       },
       {
@@ -580,8 +581,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         Math.random() * 100, // seed.xy
         1 + Math.random(),
         1 + Math.random(), // seed.zw
-        0.0, //TODO: bind weather Data temperature per frame
-        0.0, //TODO: bind weather Data percipitation per frame
+        -3.0, //TODO: bind weather Data temperature per frame
+        3.0, //TODO: bind weather Data percipitation per frame
         0.0,
         0.0,//padding
       ])
@@ -630,7 +631,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       const passEncoder = commandEncoder.beginComputePass();
       passEncoder.setPipeline(computePipeline);
       passEncoder.setBindGroup(0, computeBindGroup);
-      passEncoder.dispatchWorkgroups(Math.ceil(mesh.width / 8),Math.ceil(mesh.height / 8));
+      passEncoder.dispatchWorkgroups(Math.ceil((mesh.width-1) / 8),Math.ceil((mesh.height-1) / 8));
       passEncoder.end();
     }
     {

@@ -24,8 +24,8 @@ struct WeatherData
 struct SimulationCSVar {
     Timesteps: i32,
     CurrentSimulationStep: i32,
-    HourOfDay:i32,
-    DayOfYear:i32,
+    HourOfDay: i32,
+    DayOfYear: i32,
 };
 
 const SimulationCSVariables: SimulationCSVar = SimulationCSVar(0,0,0,0);
@@ -182,9 +182,9 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   var coord : vec2<i32>=vec2<i32>(0,0);
 
   //CRYSTAL: change following three lines of code for testing different textures
-  coord.x=i32(f32(textorigDim.x)*in.uv.x);
-  coord.y=i32(f32(textorigDim.y)*in.uv.y);
-  var testcolor = textureLoad(origtexture, coord.xy, 0);
+  coord.x=i32(f32(textDim.x)*in.uv.x);
+  coord.y=i32(f32(textDim.y)*in.uv.y);
+  var testcolor = textureLoad(fragtexture, coord.xy, 0);
   
   let lambertFactor = max(dot(normalize(-lightDir), in.normal), 0.0);
   let lightingFactor = min(ambientFactor + lambertFactor, 1.0);
@@ -237,6 +237,7 @@ struct Cell {
   SnowAlbedo: f32,
   DaysSinceLastSnowfall: f32,
   Curvature: f32,
+  Padding:f32,
 }
 struct Cells {
   cells : array<Cell>,
@@ -249,10 +250,12 @@ struct Cells {
 
 @compute @workgroup_size(8,8)
 fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
-    let idx = global_invocation_id.x;
+    
     var textDim=vec2<i32>(textureDimensions(texture).xy);
     var text2Dim=vec2<i32>(textureDimensions(texture2).xy);
     var coord : vec2<i32>=vec2<i32>(global_invocation_id.xy);
+    var idx: u32= global_invocation_id.x*textureDimensions(texture2).y+global_invocation_id.y;
+    //var idx: u32= global_invocation_id.x;
 
     init_rand(idx, sim_params.seed);
     var loadcoord : vec2<i32>=vec2<i32>(0,0);
@@ -262,11 +265,12 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     var color = textureLoad(texture, loadcoord, 0);
     
     //CRYSTAL: here is example of how to store color to texture, just modify color.xyz to change color
-    textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(color.xyz,1.0));
+    //textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(color.xyz,1.0));
 
 
     //CRYSTAL: starting from this part, use the same code from that unreal project
     var celldata = data.cells[idx];
+    
     var areaSquareMeters:f32 = celldata.AreaXY / (100.0 * 100.0); // m^2
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
@@ -280,7 +284,7 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     var precipitation:f32 = sim_params.weather.Precipitation;
 
     celldata.DaysSinceLastSnowfall += 1.0 / 24.0;
-
+    
       // Apply precipitation
     if (precipitation > 0.0) {
         precipitation += precipitationLapse;
@@ -311,8 +315,6 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
         if (tAir > SimulationCSConstants.TMeltA) {
             var dayNormalization: f32 = 1.0 / 24.0; // day
 
-            
-
             // Radiation Index
             var output: vec3<f32> = SolarRadiationIndex(celldata.Inclination,celldata.Aspect, celldata.Latitude, f32(SimulationCSVariables.DayOfYear)); // 1
 
@@ -323,8 +325,8 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             // Diurnal approximation
             var t: i32 = SimulationCSVariables.HourOfDay;
             var D: f32 = abs(T4) + abs(T5);
-            var r_i_t: f32 = max(PI * r_i / 2.0 * sin(PI * f32(t) / D - abs(T4) / PI), 0.0);
-
+            //var r_i_t: f32 = max(PI * r_i / 2.0 * sin(PI * f32(t) / D - abs(T4) / PI), 0.0);
+            var r_i_t: f32 =5.0;
             // Melt factor
             // @TODO melt factor test
             var vegetationDensity: f32 = 0.0;
@@ -344,7 +346,12 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             celldata.SnowWaterEquivalent = max(0.0, celldata.SnowWaterEquivalent);
         }
     }
+    //celldata.Curvature-=0.001;
     data.cells[idx] = celldata;
+    //var output_color: f32=celldata.SnowAlbedo;
+    var output_color: f32=celldata.SnowWaterEquivalent;
+    textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(output_color,output_color,output_color,1.0));
+
 
 
   // Apply gravity

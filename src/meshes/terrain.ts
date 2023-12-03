@@ -123,6 +123,8 @@ async function generateTerrainCells(mesh) {
   let height = mesh.height; 
   let grid_size = mesh.positions.length;
   console.log("grid_size " + grid_size);
+  console.log("side_width " + (width-1));
+  console.log("side_height " + (height-1));
 
   let cells :  {
     P0: [number, number, number][],
@@ -140,6 +142,7 @@ async function generateTerrainCells(mesh) {
     SnowAlbedo: number[],
     DaysSinceLastSnowfall: number[],
     Curvature: number[],
+    Size: number,
   } = {
     P0: new Array<[number, number, number]>(grid_size),
     P1: new Array<[number, number, number]>(grid_size),
@@ -156,13 +159,14 @@ async function generateTerrainCells(mesh) {
     SnowAlbedo: new Array<number>(grid_size),
     DaysSinceLastSnowfall: new Array<number>(grid_size),
     Curvature: new Array<number>(grid_size),
+    Size: (height-1)*(width-1),
   };
 
   let initialMaxSnow = 0.0;
 
   for (let x = 0; x < width - 1; x++) {
     for (let z = 0; z < height - 1; z++) {
-      let cellIndex = x * height + z;
+      let cellIndex = x * (height-1) + z;
 
       cells.P0[cellIndex] = mesh.positions[x * height + z];
       cells.P1[cellIndex] = mesh.positions[x * height + z + 1];
@@ -218,6 +222,7 @@ async function generateTerrainCells(mesh) {
       cells.SnowWaterEquivalent[cellIndex] = snowWaterEquivalent;
 
       // TODO: Curvature
+      cells.Curvature[cellIndex] = 1.0;
     }
   }
   return cells;
