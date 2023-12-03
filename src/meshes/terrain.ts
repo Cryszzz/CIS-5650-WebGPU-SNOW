@@ -28,7 +28,7 @@ async function generateTerrainMesh() {
     const terrainSize = 1000;
     const gridSpacing = 1;
     // const gridSpacing = 4;
-    const skip=2;
+    const skip=10;
     const uvrepeat=1;
     const verticesPerRow = Math.floor((Math.floor(height/skip)-1)/2)*2+1;
     const verticesPerColumn = Math.floor((Math.floor(width/skip)-1)/2)*2+1;
@@ -47,9 +47,11 @@ async function generateTerrainMesh() {
           //console.log(data);
           positions.push([(x - width / 2)*gridSpacing, data/100, (z - height / 2)*gridSpacing]);
           //positions.push([(x - width / 2)*gridSpacing, 0, (z - height / 2)*gridSpacing]);
-          uvs.push([x/(verticesPerRow*skip)*uvrepeat,verticesPerRow*skip-z/(verticesPerRow*skip)*uvrepeat]);
-      }
-  }
+          uvs.push([x/(verticesPerRow*skip)*uvrepeat,1.0-z/(verticesPerRow*skip)*uvrepeat]);
+          
+        }
+    }
+    //console.log(uvs);
 
     // for (let x = 0; x <width; x++) {
     //   for (let z = 0; z <height; z++) {

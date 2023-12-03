@@ -248,6 +248,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   let cubeTexture: GPUTexture;
   {
     const response = await fetch('../assets/img/file/rock.png');
+    //const response = await fetch('../assets/img/Di-3d.png');
     const imageBitmap = await createImageBitmap(await response.blob());
 
     cubeTexture = device.createTexture({
@@ -275,6 +276,10 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       },
       {
         binding: 1,
+        resource: writableTexture.createView(),
+      },
+      {
+        binding: 2,
         resource: cubeTexture.createView(),
       },
     ],
