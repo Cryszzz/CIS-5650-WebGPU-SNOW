@@ -178,7 +178,7 @@ async function generateTerrainCells(mesh) {
       let P2 = vec3.fromValues(cells.P2[cellIndex][0], cells.P2[cellIndex][1], cells.P2[cellIndex][2]);
       let P3 = vec3.fromValues(cells.P3[cellIndex][0], cells.P3[cellIndex][1], cells.P3[cellIndex][2]);
 
-      let normal = vec3.cross(vec3.create(), vec3.subtract(vec3.create(), P0, P0), vec3.subtract(vec3.create(), P1, P0));
+      let normal = vec3.cross(vec3.create(), vec3.subtract(vec3.create(), P1, P0), vec3.subtract(vec3.create(), P2, P0));
       let centroid = vec3.fromValues((P0[0] + P1[0] + P2[0] + P3[0]) / 4, (P0[1] + P1[1] + P2[1] + P3[1]) / 4, (P0[2] + P1[2] + P2[2] + P3[2]) / 4);
       cells.Altitude[cellIndex] = centroid[1]; // Centroid.Z
 

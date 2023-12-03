@@ -84,3 +84,7 @@ export function timeToHours(time: number) {
 export function getDayOfYear(time: number) {
   return Math.floor(timeToDays(time) % 365);
 }
+
+export function getHourOfDay(time: number) {
+  return Math.floor(timeToHours(time) % 24);
+}

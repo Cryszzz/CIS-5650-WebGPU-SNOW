@@ -7,7 +7,7 @@ import { getTerrainMesh, getTerrainCells } from '../../meshes/terrain';
 import { WASDCamera, cameraSourceInfo } from './camera';
 import { createInputHandler, inputSourceInfo } from './input';
 import { getWeatherData } from './weather';
-import { getDayOfYear, degreesToRadians, timeToDays, timeToHours} from '../../meshes/utils';
+import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours} from '../../meshes/utils';
 
 const numParticles = 50000;
 const particlePositionOffset = 0;
@@ -581,10 +581,12 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         Math.random() * 100, // seed.xy
         1 + Math.random(),
         1 + Math.random(), // seed.zw
-        -3.0, //TODO: bind weather Data temperature per frame
-        3.0, //TODO: bind weather Data percipitation per frame
+        -1.0, //TODO: bind weather Data temperature per frame
+        1.0, //TODO: bind weather Data percipitation per frame
+        //getHourOfDay(now),//padding
+        //getDayOfYear(now),
         0.0,
-        0.0,//padding
+        0.0,
       ])
     );
 
