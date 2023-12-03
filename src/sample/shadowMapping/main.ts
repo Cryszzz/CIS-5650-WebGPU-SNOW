@@ -552,11 +552,11 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const deltaTime = (now - lastFrameMS) / 1000;
     lastFrameMS = now;
     //TODO: how to bind weather Data per frame
-    let weatherData;
+    let weatherData = getWeatherData(now, mesh.width, mesh.height);
 
-    if (now % 1000 > 998)
-    {
-      weatherData = getWeatherData(now, mesh.width, mesh.height);
+    // if (now % 1000 > 998)
+    // {
+      // weatherData = getWeatherData(now, mesh.width, mesh.height);
       
       // for (let i = 0; i < 10; i++) {
       //   console.log("now: " + now);
@@ -566,8 +566,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         // console.log("temperature: " + weatherData.temperature[20]);
       //   console.log("precipitation: " + weatherData.precipitation[i * 20]);
       // }
-    }
-
+    // }
+    // console.log("weather temperature: " + weatherData.temperature[0]);
+    // console.log("weather precipitation: " + weatherData.precipitation[0]);
     device.queue.writeBuffer(
       simulationUBOBuffer,
       0,
@@ -580,8 +581,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         Math.random() * 100, // seed.xy
         1 + Math.random(),
         1 + Math.random(), // seed.zw
-        0.0, //TODO: bind weather Data temperature per frame
-        0.0, //TODO: bind weather Data percipitation per frame
+        weatherData.temperature[0], //TODO: bind weather Data temperature per frame
+        weatherData.precipitation[0], //TODO: bind weather Data percipitation per frame
         0.0,
         0.0,//padding
       ])

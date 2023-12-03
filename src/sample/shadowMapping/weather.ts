@@ -18,6 +18,94 @@ let currState = '';
 const day = 2000;
 const hour = day / 24;
 
+// // export async function getWeatherData(time: number, width: number, height: number) {
+// export const getWeatherData = (time: number, width: number, height: number) => {
+//   let deltaTime = (currTime === -1) ? hour : (time - currTime);
+//   currTime = time;
+//   if (currState === '') {
+//     var state = Math.random() < probabilities.p_i_w ? 'wet' : 'dry';
+//   } else {
+//     var state = currState;
+//   }
+
+//   const temperatureNoiseScale = 0.01;
+//   let temperatureNoise: number[][] = [];
+//   for (let x = 0; x < width - 1; x++) {
+//     temperatureNoise[x] = [];
+//     for (let z = 0; z < height - 1; z++) {
+//       const noise_xz = 1 + noise(x * temperatureNoiseScale, z * temperatureNoiseScale);
+//       temperatureNoise[x][z] = noise_xz;
+//     }
+//   }
+
+//   //console.log("weather point 1");
+
+//   let deltaTimeHours = Math.floor(timeToHours(deltaTime));
+//   let weatherData : {
+//     temperature: number[],
+//     precipitation: number[],
+//   } = {
+//     temperature: [],
+//     precipitation: [],
+//   };
+
+//   // this double loop was inside if (state === 'wet')
+//   let noiseMeasurement: number[][] = [];
+//   const precipitationNoiseScale = 0.01;
+//   for (let noiseX = 0; noiseX < width; noiseX++) {
+//     noiseMeasurement[noiseX] = [];
+//     for (let noiseY = 0; noiseY < height; noiseY++) {
+//       const precipitationNoise = createNoise2D(new Alea(time));
+//       const noise_xy = Math.max(0.9 * (1 + precipitationNoise(noiseX * precipitationNoiseScale, noiseY * precipitationNoiseScale)) + 0.2, 0);
+//       noiseMeasurement[noiseX][noiseY] = noise_xy;
+//     }
+//   }
+
+//   // there should be another loop here but its already horribly inefficient..
+//   // for (let hour = 0; hour < deltaTimeHours; hour++) 
+//   for (let x = 0; x < width - 1; x++) {
+//     for (let z = 0; z < height - 1; z++) {
+//       let precipitation = 0;
+//       if (x === 0 && z === 0 || x == width - 2 && z == height - 2)
+//       {
+//         //console.log("weather point 2");
+//       }
+
+//       // calculate precipitation
+//       if (state === 'wet') {
+//         // double loop was here before
+//         const rainFallMM = 2.5 * Math.exp(2.5 * Math.random()) / 24;
+//         precipitation = rainFallMM * noiseMeasurement[x][z];
+//       }
+
+//       if (x === 0 && z === 0 && x == width - 2 && z == height - 2)
+//       {
+//         console.log("weather point 3");
+//       }
+
+//       // calculate temperature
+//       let seasonalOffset = -Math.cos(getDayOfYear(time) * 2 * Math.PI / 365) * 9 + (Math.random() - 0.5);
+//       const baseTemperature = 10;
+//       const overcastTemperatureOffset = state === 'wet' ? -8 : 0;
+//       const temperature = baseTemperature + seasonalOffset + overcastTemperatureOffset + temperatureNoise[x][z];
+
+//       weatherData.temperature[x * height + z] = temperature;
+//       weatherData.precipitation[x * height + z] = precipitation;
+//     }
+//   }
+
+//   if (state === 'wet') {
+//     currState = (Math.random() < probabilities.p_ww) ? 'wet' : 'dry';
+//   } else if (state === 'dry') {
+//     currState = (Math.random() < probabilities.p_wd) ? 'wet' : 'dry';
+//   } else {
+//     currState = 'dry';
+//   }
+
+//   return weatherData;
+// }
+
+
 // export async function getWeatherData(time: number, width: number, height: number) {
 export const getWeatherData = (time: number, width: number, height: number) => {
   let deltaTime = (currTime === -1) ? hour : (time - currTime);
@@ -52,9 +140,9 @@ export const getWeatherData = (time: number, width: number, height: number) => {
   // this double loop was inside if (state === 'wet')
   let noiseMeasurement: number[][] = [];
   const precipitationNoiseScale = 0.01;
-  for (let noiseX = 0; noiseX < width; noiseX++) {
+  for (let noiseX = 0; noiseX < 1; noiseX++) {
     noiseMeasurement[noiseX] = [];
-    for (let noiseY = 0; noiseY < height; noiseY++) {
+    for (let noiseY = 0; noiseY < 1; noiseY++) {
       const precipitationNoise = createNoise2D(new Alea(time));
       const noise_xy = Math.max(0.9 * (1 + precipitationNoise(noiseX * precipitationNoiseScale, noiseY * precipitationNoiseScale)) + 0.2, 0);
       noiseMeasurement[noiseX][noiseY] = noise_xy;
@@ -63,36 +151,36 @@ export const getWeatherData = (time: number, width: number, height: number) => {
 
   // there should be another loop here but its already horribly inefficient..
   // for (let hour = 0; hour < deltaTimeHours; hour++) 
-  for (let x = 0; x < width - 1; x++) {
-    for (let z = 0; z < height - 1; z++) {
+  // for (let x = 0; x < width - 1; x++) {
+  //   for (let z = 0; z < height - 1; z++) {
       let precipitation = 0;
-      if (x === 0 && z === 0 || x == width - 2 && z == height - 2)
-      {
-        //console.log("weather point 2");
-      }
+  //     if (x === 0 && z === 0 || x == width - 2 && z == height - 2)
+  //     {
+  //       //console.log("weather point 2");
+  //     }
 
       // calculate precipitation
       if (state === 'wet') {
         // double loop was here before
         const rainFallMM = 2.5 * Math.exp(2.5 * Math.random()) / 24;
-        precipitation = rainFallMM * noiseMeasurement[x][z];
+        precipitation = rainFallMM * noiseMeasurement[0][0];
       }
 
-      if (x === 0 && z === 0 && x == width - 2 && z == height - 2)
-      {
-        console.log("weather point 3");
-      }
+      // if (x === 0 && z === 0 && x == width - 2 && z == height - 2)
+      // {
+      //   console.log("weather point 3");
+      // }
 
       // calculate temperature
       let seasonalOffset = -Math.cos(getDayOfYear(time) * 2 * Math.PI / 365) * 9 + (Math.random() - 0.5);
       const baseTemperature = 10;
       const overcastTemperatureOffset = state === 'wet' ? -8 : 0;
-      const temperature = baseTemperature + seasonalOffset + overcastTemperatureOffset + temperatureNoise[x][z];
+      const temperature = baseTemperature + seasonalOffset + overcastTemperatureOffset + temperatureNoise[0][0];
 
-      weatherData.temperature[x * height + z] = temperature;
-      weatherData.precipitation[x * height + z] = precipitation;
-    }
-  }
+      weatherData.temperature[0] = temperature;
+      weatherData.precipitation[0] = precipitation;
+  //   }
+  // }
 
   if (state === 'wet') {
     currState = (Math.random() < probabilities.p_ww) ? 'wet' : 'dry';
