@@ -88,3 +88,7 @@ export function getDayOfYear(time: number) {
 export function getHourOfDay(time: number) {
   return Math.floor(timeToHours(time) % 24);
 }
+
+export function radiansToDegrees(radians: number) {
+  return (radians * 180) / Math.PI;
+}

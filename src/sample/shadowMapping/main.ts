@@ -8,6 +8,7 @@ import { WASDCamera, cameraSourceInfo } from './camera';
 import { createInputHandler, inputSourceInfo } from './input';
 import { getWeatherData } from './weather';
 import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours} from '../../meshes/utils';
+import { computeSnowCPU } from './snowCompute';
 
 const numParticles = 50000;
 const particlePositionOffset = 0;
@@ -27,7 +28,7 @@ const cellInstanceByteSize =
 
 const cameraDefaults = {
   position: vec3.create(0, 300, -80),
-  target: vec3.create(0, 250, 0),
+  target: vec3.create(0, 0, 0),
   // position: vec3.create(0, 5, -5),
   // target: vec3.create(0, 0, 0),
 };
@@ -86,25 +87,33 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   const mesh=await getTerrainMesh();
   const terrainCells = await getTerrainCells(mesh);
   console.log(terrainCells.Size);
-  /*
-  for (let i = 0; i < 200; i += 20) {
-    console.log("Terrain Cell: " + i)
-    console.log("P0: " + i + " " + terrainCells.P0[i]);
-    console.log("P1: " + i + " " + terrainCells.P1[i]);
-    console.log("P2: " + i + " " + terrainCells.P2[i]);
-    console.log("P3: " + i + " " + terrainCells.P3[i]);
-    console.log("Aspect: " + i + " " + terrainCells.Aspect[i]);
-    console.log("Inclination: " + i + " " + terrainCells.Inclination[i]);
-    console.log("Altitude: " + i + " " + terrainCells.Altitude[i]);
-    console.log("Latitude: " + i + " " + terrainCells.Latitude[i]);
-    console.log("Area: " + i + " " + terrainCells.Area[i]);
-    console.log("AreaXZ: " + i + " " + terrainCells.AreaXZ[i]);
-    console.log("SnowWaterEquivalent: " + i + " " + terrainCells.SnowWaterEquivalent[i]);
-    console.log("InterpolatedSWE: " + i + " " + terrainCells.InterpolatedSWE[i]);
-    console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
-    console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
-    console.log("Curvature: " + i + " " + terrainCells.Curvature[i]);
-  }*/
+  
+  const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
+                                  9 * mesh.width + 16, 9 * mesh.width + 17, 9 * mesh.width + 18,
+                                  11 * mesh.height + 6, 11 * mesh.height + 7, 9 * mesh.height + 15,
+                                  9 * mesh.height + 16, 9 * mesh.height + 17, 9 * mesh.height + 18,]
+
+  // for (let i = 0; i < 580; i += 20) {
+  for (let i = 0; i < terrainCellsDebugIndex.length; i++) {
+    const currIndex = terrainCellsDebugIndex[i];
+    console.log("Terrain Cell: " + currIndex)
+    // console.log("P0: " + i + " " + terrainCells.P0[i]);
+    // console.log("P1: " + i + " " + terrainCells.P1[i]);
+    // console.log("P2: " + i + " " + terrainCells.P2[i]);
+    // console.log("P3: " + i + " " + terrainCells.P3[i]);
+    console.log("Aspect: " + " " + terrainCells.Aspect[currIndex]);
+    console.log("Inclination: " + " " + terrainCells.Inclination[currIndex]);
+    console.log("Altitude: " + " " + terrainCells.Altitude[currIndex]);
+    // console.log("Latitude: " + i + " " + terrainCells.Latitude[i]);
+    console.log("Area: " + " " + terrainCells.Area[currIndex]);
+    console.log("AreaXZ: " + " " + terrainCells.AreaXZ[currIndex]);
+    // console.log("SnowWaterEquivalent: " + i + " " + terrainCells.SnowWaterEquivalent[i]);
+    // console.log("InterpolatedSWE: " + i + " " + terrainCells.InterpolatedSWE[i]);
+    // console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
+    // console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
+    // console.log("Curvature: " + i + " " + terrainCells.Curvature[i]);
+  // }
+  }
   const cellBuffer = device.createBuffer({
     size: terrainCells.Size * cellInstanceByteSize,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
@@ -589,6 +598,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         0.0,
       ])
     );
+
+    // computeSnowCPU(terrainCells);
 
     mat4.identity(view);
     mat4.translate(view, vec3.fromValues(0, 0, -3), view);

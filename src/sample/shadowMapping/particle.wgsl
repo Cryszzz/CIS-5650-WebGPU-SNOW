@@ -190,10 +190,12 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   coord.y=i32(f32(textorigDim.y)*in.uv.y);
   var origcolor = textureLoad(origtexture, coord.xy, 0);
   var out_color = (1.0-testcolor.x)*origcolor+testcolor.x*testcolor;
+  // var out_color = testcolor;
 
   let lambertFactor = max(dot(normalize(-lightDir), in.normal), 0.0);
   let lightingFactor = min(ambientFactor + lambertFactor, 1.0);
   var color = vec4(lightingFactor*out_color.xyz,1.0);
+  // var color = vec4(out_color.xyz,1.0);
   // Apply a circular particle alpha mask
   //color.a = color.a * max(1.0 - length(in.quad_pos), 0.0);
   return color;
@@ -354,16 +356,23 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             celldata.SnowWaterEquivalent = max(0.0, celldata.SnowWaterEquivalent);
         }
     }
+    var slope = degrees(celldata.Inclination);
+    var f = select(0.0, slope / 60.0, slope < 15.0);
+	  var a3 = 50.0;
+
+    celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature);
+
     //celldata.Curvature-=0.001;
     data.cells[idx] = celldata;
     //var output_color: f32=celldata.SnowAlbedo;
-    var output_color: f32=celldata.SnowWaterEquivalent*0.5;
-    /*var temp:i32=coord.x;
-    coord.x=coord.y;
-    coord.y=temp;*/
+    var output_color: f32=celldata.InterpolatedSWE * 1.0;
+    var debug_color_y: f32 = f32(coord.y) / f32(textureDimensions(texture2).y);
+    var debug_color_x: f32 = f32(coord.x) / f32(textureDimensions(texture2).x);
+    
     textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(output_color,output_color,output_color,1.0));
 
-
+  // (11,6),(11,7)
+  // (9,15),(9,16),(9,17)
 
   // Apply gravity
   /*particle.velocity.z = particle.velocity.z - sim_params.deltaTime * 0.5;

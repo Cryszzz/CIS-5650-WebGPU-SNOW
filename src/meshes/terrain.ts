@@ -28,7 +28,7 @@ async function generateTerrainMesh() {
     const terrainSize = 1000;
     const gridSpacing = 1;
     // const gridSpacing = 4;
-    const skip=10;
+    const skip=3;
     const uvrepeat=1;
     const verticesPerRow = Math.floor((Math.floor(height/skip)-1)/2)*2+1;
     const verticesPerColumn = Math.floor((Math.floor(width/skip)-1)/2)*2+1;
@@ -111,11 +111,20 @@ export async function getTerrainMesh() {
 //     mesh.uvs = computeProjectedPlaneUVs(positions);
 //     return mesh;
 // }
-
-
+const normalizeAngle360 = (A: number) => {
+    A = A % 360;
+    return A < 0 ? A + (Math.PI*2) : A;
+}
 
 export async function getTerrainCells(mesh) {
   return await generateTerrainCells(mesh);
+}
+
+function getCellIndex(x : number, z : number, cell_width_x : number, cell_height_z)
+{
+  let index = x * cell_height_z + z;
+  let value = (index >= 0 && index < cell_width_x * cell_height_z) ? index : -1;
+  return value;
 }
 
 async function generateTerrainCells(mesh) {
@@ -163,10 +172,10 @@ async function generateTerrainCells(mesh) {
   };
 
   let initialMaxSnow = 0.0;
+  let cellIndex = 0;
 
   for (let x = 0; x < width - 1; x++) {
     for (let z = 0; z < height - 1; z++) {
-      let cellIndex = x * (height-1) + z;
 
       cells.P0[cellIndex] = mesh.positions[x * height + z];
       cells.P1[cellIndex] = mesh.positions[x * height + z + 1];
@@ -204,6 +213,7 @@ async function generateTerrainCells(mesh) {
       let dot = vec2.dot(normalProjXZ, north2D);
       let det = normalProjXZ[0] * north2D[1] - normalProjXZ[1] * north2D[0];
       cells.Aspect[cellIndex] = Math.atan2(det, dot);
+      cells.Aspect[cellIndex] = normalizeAngle360(cells.Aspect[cellIndex]);
 
       // Initial conditions
       let snowWaterEquivalent = 0.0;
@@ -223,6 +233,50 @@ async function generateTerrainCells(mesh) {
 
       // TODO: Curvature
       cells.Curvature[cellIndex] = 1.0;
+      cellIndex++;
+    }
+  }
+
+  let cell_width_x = width - 1;
+  let cell_height_z = height - 1;
+
+  for (let x = 0; x < cell_width_x; x++) {
+    for (let z = 0; z < cell_height_z; z++) {
+      let index = x * cell_height_z + z;
+      let neighborsIndices = new Array(8);
+
+      neighborsIndices[0] = getCellIndex(x, z - 1, cell_width_x, cell_height_z);						// N
+      neighborsIndices[1] = getCellIndex(x + 1, z - 1, cell_width_x, cell_height_z);					// NE
+      neighborsIndices[2] = getCellIndex(x + 1, z, cell_width_x, cell_height_z);						// E
+      neighborsIndices[3] = getCellIndex(x + 1, z + 1, cell_width_x, cell_height_z);					// SE
+
+      neighborsIndices[4] = getCellIndex(x, z + 1, cell_width_x, cell_height_z);						// S
+      neighborsIndices[5] = getCellIndex(x - 1, z + 1, cell_width_x, cell_height_z); 				// SW
+      neighborsIndices[6] = getCellIndex(x - 1, z, cell_width_x, cell_height_z);						// W
+      neighborsIndices[7] = getCellIndex(x - 1, z - 1, cell_width_x, cell_height_z);					// NW
+
+      if (neighborsIndices[0] == -1 || neighborsIndices[1] == -1 || neighborsIndices[2] == -1 || neighborsIndices[3] == -1
+        || neighborsIndices[4] == -1 || neighborsIndices[5] == -1 || neighborsIndices[6] == -1 || neighborsIndices[7] == -1)
+        {
+          cells.Curvature[index] = 0.0;
+        }
+
+      let Z1 = cells.Altitude[neighborsIndices[1]] / 100; // NW
+      let Z2 = cells.Altitude[neighborsIndices[0]] / 100; // N
+      let Z3 = cells.Altitude[neighborsIndices[7]] / 100; // NE
+      let Z4 = cells.Altitude[neighborsIndices[2]] / 100; // W
+      let Z5 = cells.Altitude[index] / 100;
+      let Z6 = cells.Altitude[neighborsIndices[6]] / 100; // E
+      let Z7 = cells.Altitude[neighborsIndices[3]] / 100; // SW
+      let Z8 = cells.Altitude[neighborsIndices[4]] / 100; // S
+      let Z9 = cells.Altitude[neighborsIndices[5]] / 100; // SE
+
+      let L = cells.P2[index][0] - cells.P0[index][0]
+
+      let D = ((Z4 + Z6) / 2 - Z5) / (L * L);
+      let E = ((Z2 + Z8) / 2 - Z5) / (L * L);
+      cells.Curvature[index] = 2 * (D + E);
+      console.log("curvature: ", cells.Curvature[index]);
     }
   }
   return cells;
