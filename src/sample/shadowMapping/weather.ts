@@ -3,9 +3,9 @@ import { timeToHours, getDayOfYear } from '../../meshes/utils'
 // import alea from 'alea'
 
 const probabilities = {
-  p_ww: 0.75, // Probability of a wet 
-  p_wd: 0.1,
-  p_i_w: 0.6,
+  p_ww: 0.75, // Probability of a wet after wet day
+  p_wd: 0.4, // Probability of a wet after dry day
+  p_i_w: 0.6, // Probability of initial wet day
 };
 
 // const resolution = 10;
@@ -15,8 +15,8 @@ var Alea = require('alea')
 let currTime = -1;
 let currState = '';
 
-const day = 2000;
-const hour = day / 24;
+const day = 1000;
+const hour = day * 24;
 
 // export async function getWeatherData(time: number, width: number, height: number) {
 export const getWeatherData = (time: number, width: number, height: number) => {

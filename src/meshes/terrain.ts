@@ -28,7 +28,7 @@ async function generateTerrainMesh() {
     const terrainSize = 1000;
     const gridSpacing = 1;
     // const gridSpacing = 4;
-    const skip=3;
+    const skip=2;
     const uvrepeat=1;
     const verticesPerRow = Math.floor((Math.floor(height/skip)-1)/2)*2+1;
     const verticesPerColumn = Math.floor((Math.floor(width/skip)-1)/2)*2+1;
@@ -172,11 +172,11 @@ async function generateTerrainCells(mesh) {
   };
 
   let initialMaxSnow = 0.0;
-  let cellIndex = 0;
+  // let cellIndex = 0;
 
   for (let x = 0; x < width - 1; x++) {
     for (let z = 0; z < height - 1; z++) {
-
+      let cellIndex = x * (height - 1) + z;
       cells.P0[cellIndex] = mesh.positions[x * height + z];
       cells.P1[cellIndex] = mesh.positions[x * height + z + 1];
       cells.P2[cellIndex] = mesh.positions[(x + 1) * height + z];
@@ -233,7 +233,7 @@ async function generateTerrainCells(mesh) {
 
       // TODO: Curvature
       // cells.Curvature[cellIndex] = 1.0;
-      cellIndex++;
+      // cellIndex++;
     }
   }
 

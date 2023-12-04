@@ -49,7 +49,7 @@ interface SimulationCSVar {
 const SimulationCSVariables: SimulationCSVar = {
   Timesteps: 0,
   CurrentSimulationStep: 0,
-  HourOfDay: 0,
+  HourOfDay: 12,
   DayOfYear: 0,
 };
 
@@ -140,28 +140,29 @@ function SolarRadiationIndex(I: number, A: number, L0: number, J: number){
     return [T4,T5,R4 / R3];
 }
 
-export function computeSnowCPU(cells) {
-  console.log("test");
+export function computeSnowCPU(cells, temperature?, precipitation?) {
+  // console.log("test");
   for (let idx = 0; idx < cells.Inclination.length; idx++) {
     // var celldata = cells[idx];
         
-    var areaSquareMeters:number = cells.AreaXZ[idx] / (100.0 * 100.0); // m^2
+    var areaSquareMeters:number = cells.AreaXZ[idx] * 10000; // m^2 Each cell is constant 20000m^2 for now
+    console.log("areaSquareMeters: ", areaSquareMeters);
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
     var stationAltitudeOffset:number = cells.Altitude[idx] - SimulationCSConstants.MeasurementAltitude;
     var temperatureLapse:number = - (0.5 * stationAltitudeOffset) / (100.0 * 100.0);
 
-    var tAir:number= sim_params.Temperature + temperatureLapse; // degree Celsius
+    var tAir:number= temperature ? temperature + temperatureLapse : sim_params.Temperature + temperatureLapse; // degree Celsius
 
     var precipitationLapse:number= 10.0 / 24.0 * stationAltitudeOffset / (100.0 * 1000.0);
         // const precipitationLapse: number = 0;
-    var precipitation:number = sim_params.Precipitation;
+    var precipitationNum:number = precipitation ? precipitation : sim_params.Precipitation;
 
     cells.DaysSinceLastSnowfall[idx] += 1.0 / 24.0;
 
       // Apply precipitation
-    if (precipitation > 0.0) {
-        precipitation += precipitationLapse;
+    if (precipitationNum > 0.0) {
+        precipitationNum += precipitationLapse;
         cells.DaysSinceLastSnowfall[idx] = 0.0;
 
         // New snow/rainfall
@@ -173,7 +174,7 @@ export function computeSnowCPU(cells) {
             // Variable lapse rate as described in "A variable lapse rate snowline model for the Remarkables, Central Otago, New Zealand"
             var snowRate:number= Math.max(0.0, 1.0 - (tAir - SimulationCSConstants.TSnowA) / (SimulationCSConstants.TSnowB - SimulationCSConstants.TSnowA));
 
-            cells.SnowWaterEquivalent[idx] += (precipitation * areaSquareMeters * snowRate); // l/m^2 * m^2 = l
+            cells.SnowWaterEquivalent[idx] += (precipitationNum * areaSquareMeters * snowRate); // l/m^2 * m^2 = l
             cells.SnowAlbedo[idx] = 0.8; // New snow sets the albedo to 0.8
         }
     }
@@ -187,7 +188,7 @@ export function computeSnowCPU(cells) {
 
         // Temperature higher than melt threshold and cell contains snow
         if (tAir > SimulationCSConstants.TMeltA) {
-            var dayNormalization: number = 1.0 / 24.0; // day
+            var dayNormalization: number = 1.0; // day made it 1
 
             // Radiation Index
             var output = SolarRadiationIndex(cells.Inclination[idx],cells.Aspect[idx], cells.Latitude[idx], SimulationCSVariables.DayOfYear); // 1
@@ -214,9 +215,10 @@ export function computeSnowCPU(cells) {
             }
 
             var m: number = c_m * meltFactor; // l/C� * C� = l
-
+            console.log("melt factor: ", m);
             // Apply melt
             cells.SnowWaterEquivalent[idx] -= m;
+            console.log("snow water equivalent: ", cells.SnowWaterEquivalent[idx]);
             cells.SnowWaterEquivalent[idx] = Math.max(0.0, cells.SnowWaterEquivalent[idx]);
         }
     }
@@ -231,7 +233,7 @@ export function computeSnowCPU(cells) {
     var output_color: number=cells.InterpolatedSWE[idx];
 
 
-    console.log("snow data for cell: ", idx, " : ", cells.InterpolatedSWE[idx], " : ", cells.SnowAlbedo[idx]);
-    console.log("output_color: ", output_color);
+    // console.log("snow data for cell: ", idx, " : ", cells.InterpolatedSWE[idx], " : ", cells.SnowAlbedo[idx]);
+    // console.log("output_color: ", output_color);
   }
 }

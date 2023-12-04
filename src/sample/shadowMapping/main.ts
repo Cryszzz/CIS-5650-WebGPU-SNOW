@@ -7,7 +7,7 @@ import { getTerrainMesh, getTerrainCells } from '../../meshes/terrain';
 import { WASDCamera, cameraSourceInfo } from './camera';
 import { createInputHandler, inputSourceInfo } from './input';
 import { getWeatherData } from './weather';
-import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours} from '../../meshes/utils';
+import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours, getNumHoursPassed, getNumDaysPassed} from '../../meshes/utils';
 import { computeSnowCPU } from './snowCompute';
 
 const numParticles = 50000;
@@ -56,6 +56,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
 
   // Camera initialization
   let camera = setCamera();
+  let guiTemperature = 0;
+  let guiPrecipitation = 0;
 
   const cameraParams = 
   {
@@ -64,7 +66,18 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     }
   };
 
+  const weatherParams = 
+  {
+    guiTemperature: guiTemperature,
+    guiPrecipitation: guiPrecipitation,
+    useGuiWeather: true,
+  }
+
   gui.add(cameraParams, 'resetCamera').name("Reset Camera");
+  gui.add(weatherParams, 'guiTemperature').name("Temperature");
+  gui.add(weatherParams, 'guiPrecipitation').name("Precipitation");
+  gui.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
+
 
   const devicePixelRatio = window.devicePixelRatio;
   canvas.width = canvas.clientWidth * devicePixelRatio;
@@ -554,19 +567,29 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   }
 
   let lastFrameMS = Date.now();
+  let lastDayMS = Date.now()
+  let weatherData = getWeatherData(lastFrameMS, 2, 2);
 
   function frame() {
     // Sample is no longer the active page.
     if (!pageState.active) return;
     const now = Date.now();
     const deltaTime = (now - lastFrameMS) / 1000;
+    const deltaTimeFull = now - lastDayMS;
     lastFrameMS = now;
     //TODO: how to bind weather Data per frame
-    let weatherData;
+    if (getNumDaysPassed(deltaTimeFull) >= 1 && !weatherParams.useGuiWeather)
+    {
+      console.log("day of year: " + getDayOfYear(now));
+      lastDayMS = now;
+      weatherData = getWeatherData(now, mesh.width, mesh.height);
+      console.log("weatherData: " + weatherData.temperature[0] + " : " + weatherData.precipitation[0]);
+
+    }
 
     if (now % 1000 > 998)
     {
-      weatherData = getWeatherData(now, mesh.width, mesh.height);
+      // weatherData = getWeatherData(now, mesh.width, mesh.height);
       
       // for (let i = 0; i < 10; i++) {
       //   console.log("now: " + now);
@@ -590,8 +613,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         Math.random() * 100, // seed.xy
         1 + Math.random(),
         1 + Math.random(), // seed.zw
-        -1.0, //TODO: bind weather Data temperature per frame
-        1.0, //TODO: bind weather Data percipitation per frame
+        weatherParams.useGuiWeather ? weatherParams.guiTemperature : weatherData.temperature[0], //TODO: bind weather Data temperature per frame
+        weatherParams.useGuiWeather ? weatherParams.guiPrecipitation : weatherData.precipitation[0], //TODO: bind weather Data percipitation per frame
         //getHourOfDay(now),//padding
         //getDayOfYear(now),
         0.0,
@@ -600,7 +623,14 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     );
     // if (now % 1000 > 500)
     // {
-    //  computeSnowCPU(terrainCells);
+    //   if (weatherParams.useGuiWeather)
+    //   {
+    //     computeSnowCPU(terrainCells, weatherParams.guiTemperature, weatherParams.guiPrecipitation)
+    //   }
+    //   else
+    //   {
+    //     computeSnowCPU(terrainCells);
+    //   }
     // }
 
     mat4.identity(view);

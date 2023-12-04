@@ -73,12 +73,14 @@ export function degreesToRadians(degrees: number) {
   return (degrees * Math.PI) / 180;
 }
 
+const timePerDay = 1000;
+
 export function timeToDays(time: number) {
-  return time / (2000);
+  return time / (timePerDay);
 }
 
 export function timeToHours(time: number) {
-  return time / (2000 * 24);
+  return time * 24 / (timePerDay);
 }
 
 export function getDayOfYear(time: number) {
@@ -87,6 +89,14 @@ export function getDayOfYear(time: number) {
 
 export function getHourOfDay(time: number) {
   return Math.floor(timeToHours(time) % 24);
+}
+
+export function getNumHoursPassed(time: number) {
+  return Math.floor(timeToHours(time));
+}
+
+export function getNumDaysPassed(time: number) {
+  return Math.floor(timeToDays(time));
 }
 
 export function radiansToDegrees(radians: number) {

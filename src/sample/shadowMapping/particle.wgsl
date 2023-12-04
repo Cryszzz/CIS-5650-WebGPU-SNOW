@@ -28,7 +28,7 @@ struct SimulationCSVar {
     DayOfYear: i32,
 };
 
-const SimulationCSVariables: SimulationCSVar = SimulationCSVar(0,0,0,0);
+const SimulationCSVariables: SimulationCSVar = SimulationCSVar(0,0,12,148);
 
 fn init_rand(invocation_id : u32, seed : vec4<f32>) {
   rand_seed = seed.xz;
@@ -281,7 +281,8 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     //CRYSTAL: starting from this part, use the same code from that unreal project
     var celldata = data.cells[idx];
     
-    var areaSquareMeters:f32 = celldata.AreaXY / (100.0 * 100.0); // m^2
+    var areaSquareMeters:f32 = celldata.AreaXY * 10; // m^2
+    // var areaSquareMetersPrecip:f32 = celldata.AreaXY / 1000; // m^2
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
     var stationAltitudeOffset:f32 = celldata.Altitude - SimulationCSConstants.MeasurementAltitude;
@@ -336,7 +337,7 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             var t: i32 = SimulationCSVariables.HourOfDay;
             var D: f32 = abs(T4) + abs(T5);
             var r_i_t: f32 = max(PI * r_i / 2.0 * sin(PI * f32(t) / D - abs(T4) / PI), 0.0);
-            //var r_i_t: f32 =5.0;
+            // var r_i_t: f32 =5.0;
             // Melt factor
             // @TODO melt factor test
             var vegetationDensity: f32 = 0.0;
@@ -349,7 +350,8 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
                 meltFactor=tAir - SimulationCSConstants.TMeltA;
             }
 
-            var m: f32 = c_m * meltFactor; // l/C� * C� = l
+            // Added factor to speed up melting
+            var m: f32 = c_m * meltFactor * 10; // l/C� * C� = l 
 
             // Apply melt
             celldata.SnowWaterEquivalent -= m;
@@ -357,16 +359,17 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
         }
     }
     var slope = degrees(celldata.Inclination);
-    var f = select(0.0, slope / 60.0, slope < 15.0);
-	  var a3 = 5.0;
+    var f = select(slope / 60, 0, slope < 10.0);
+    // var f = select(0, slope / 60, slope < 15.0);
+	  var a3 = 50.0;
 
-    // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature);
     celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f);
-
+    // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature);
+    // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent;
     //celldata.Curvature-=0.001;
     data.cells[idx] = celldata;
     //var output_color: f32=celldata.SnowAlbedo;
-    var output_color: f32=celldata.InterpolatedSWE * 0.5;
+    var output_color: f32=celldata.InterpolatedSWE;
     var debug_color_y: f32 = f32(coord.y) / f32(textureDimensions(texture2).y);
     var debug_color_x: f32 = f32(coord.x) / f32(textureDimensions(texture2).x);
     
