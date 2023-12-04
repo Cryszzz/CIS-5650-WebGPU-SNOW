@@ -104,7 +104,7 @@ export async function renderSkybox(device, canvas, viewMatrix, projectionMatrix)
     // Convert the matrix to a Float32Array before writing
     const matrixArray = new Float32Array(modelViewProjectionMatrix);
     console.log(matrixArray.byteLength); // This should output 64
-    device.queue.writeBuffer(uniformBuffer, 0, matrixArray, 0, matrixArray.byteLength);
+    device.queue.writeBuffer(uniformBuffer, 0, matrixArray.buffer, matrixArray.byteOffset, matrixArray.byteLength);
 
 
     // Create a sampler for the cubemap texture
