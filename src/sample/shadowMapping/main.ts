@@ -269,7 +269,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       [imageBitmap.width, imageBitmap.height]
     );
   }
-  let heightTexture: GPUTexture;
+  /*let heightTexture: GPUTexture;
   {
     const response = await fetch('../assets/img/file/height1.png');
     //const response = await fetch('../assets/img/Di-3d.png');
@@ -288,14 +288,14 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       { texture: heightTexture },
       [imageBitmap.width, imageBitmap.height]
     );
-  }
-  console.log("amount of mesh:"+(heightTexture.width-1)*(heightTexture.height-1));
-  /*let heightTexture: GPUTexture;
+  }*/
+  
+  let heightTexture: GPUTexture;
   {
     const response = await fetch('../assets/img/file/everest.tif');
     //const response = await fetch('../assets/img/Di-3d.png');
-    const url = '../assets/img/file/everest.tif';
-    //const url = '../assets/img/file/test2.tif';
+    //const url = '../assets/img/file/everest.tif';
+    const url = '../assets/img/file/test2.tif';
     const heightData = await getHeightData(url);
     
     heightTexture = device.createTexture({
@@ -309,13 +309,14 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const arrayBuffer = new Float32Array(heightData);
     device.queue.writeTexture(
       { texture: heightTexture },
-      arrayBuffer,
-      {},
+      heightData,
+      {bytesPerRow:numberArray[0]*4},
       { width: numberArray[0], height: numberArray[1] }
     );
-  }*/
+  }
+  console.log("amount of mesh:"+(heightTexture.width-1)*(heightTexture.height-1));
   //heightTexture=cubeTexture;
-  const uniformArray = new Float32Array([1.0, 1.0]);
+  const uniformArray = new Float32Array([0.1, 0.1]);
   const gridBuffer = device.createBuffer({
     label: "Grid Uniforms",
     size: uniformArray.byteLength,

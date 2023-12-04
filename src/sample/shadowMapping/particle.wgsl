@@ -131,7 +131,7 @@ struct VertexOutput {
 
   @builtin(position) Position : vec4<f32>,
 }
-const heightMul:f32=2000.0;
+const heightMul:f32=0.1;
 @vertex
 fn vs_main(in : VertexInput,
             @builtin(instance_index) instance: u32) -> VertexOutput {
@@ -142,7 +142,7 @@ fn vs_main(in : VertexInput,
   var textDim=vec2<i32>(textureDimensions(heighttexture));
   //textDim=vec2<i32>(5,5);
   let i = i32(instance);
-  let cell = vec2<i32>(i % (textDim.y - 1), i / (textDim.y - 1));
+  let cell = vec2<i32>(i % (textDim.x - 1), i / (textDim.x - 1));
   let p0:vec3<f32>=vec3<f32>(0.0,textureLoad(heighttexture,cell,0).x*heightMul,0.0);
   let p1:vec3<f32>=vec3<f32>(grid.x,textureLoad(heighttexture,vec2<i32>(cell.x+1,cell.y),0).x*heightMul,0.0);
   let p2:vec3<f32>=vec3<f32>(0.0,textureLoad(heighttexture,vec2<i32>(cell.x,cell.y+1),0).x*heightMul,grid.y);
@@ -152,7 +152,7 @@ fn vs_main(in : VertexInput,
   let p2:vec3<f32>=vec3<f32>(0.0,30.0,grid.y);
   let p3:vec3<f32>=vec3<f32>(grid.x,90.0,grid.y);*/
   var normal:vec3<f32>;
-  if(in.normal>0.0){
+  if(in.normal==0.0){
     normal=normalize(cross(p2-p0,p3-p0));
   }else{
     normal=normalize(cross(p3-p0,p1-p0));
@@ -223,8 +223,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   coord.x=i32(f32(textorigDim.x)*in.uv.x);
   coord.y=i32(f32(textorigDim.y)*in.uv.y);
   var origcolor = textureLoad(origtexture, coord.xy, 0);
-  //var out_color = (1.0-testcolor.x)*origcolor+testcolor.x*testcolor;
-  var out_color = origcolor;
+  var out_color = (1.0-testcolor.x)*origcolor+testcolor.x*testcolor;
+  //var out_color = vec4(1.0f,1.0f,1.0f,1.0f);
   let lambertFactor = max(dot(normalize(-lightDir), in.normal), 0.0);
   let lightingFactor = min(ambientFactor + lambertFactor, 1.0);
   var color = vec4(lightingFactor*out_color.xyz,1.0);
