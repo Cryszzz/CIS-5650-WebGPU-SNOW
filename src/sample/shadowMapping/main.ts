@@ -1,6 +1,8 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
 import { renderSkybox } from './skyboxPipeline';
+import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../../meshes/cube';
+import { createSkyboxPipeline, loadCubemapTexture } from './skyboxPipeline';
 
 
 import particleWGSL from './particle.wgsl';
@@ -42,7 +44,7 @@ function setCamera(position?, target?)
   return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
 }
 
-
+let skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup;
 const init: SampleInit = async ({ canvas, pageState, gui }) => {
  
 
@@ -71,6 +73,52 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   canvas.width = canvas.clientWidth * devicePixelRatio;
   canvas.height = canvas.clientHeight * devicePixelRatio;
   const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
+  
+  // Setup skybox pipeline here
+  //skyboxPipeline = await createSkyboxPipeline(device, presentationFormat);
+  // Initialize the skybox pipeline
+  //const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
+
+    // Initialize the skybox pipeline
+    const skyboxPipeline = await createSkyboxPipeline(device, presentationFormat);
+
+    // Initialize the vertex buffer for the skybox
+    const skyboxVerticesBuffer = device.createBuffer({
+      size: cubeVertexArray.byteLength,
+      usage: GPUBufferUsage.VERTEX,
+      mappedAtCreation: true,
+    });
+    new Float32Array(skyboxVerticesBuffer.getMappedRange()).set(cubeVertexArray);
+    skyboxVerticesBuffer.unmap();
+  
+    // Initialize the uniform buffer for the skybox
+    const skyboxUniformBuffer = device.createBuffer({
+      size: 16 * 4,  // Size for 2 4x4 matrices (view and projection)
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+  
+    // Load the cubemap texture for the skybox
+    const cubemapTexture = await loadCubemapTexture(device);
+  
+    // Create a sampler for the cubemap texture
+    const cubemapSampler = device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+      mipmapFilter: 'linear',
+      addressModeU: 'clamp-to-edge',
+      addressModeV: 'clamp-to-edge',
+      addressModeW: 'clamp-to-edge',
+    });
+  
+    // Initialize the uniform bind group for the skybox
+    const skyboxUniformBindGroup = device.createBindGroup({
+      layout: skyboxPipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: skyboxUniformBuffer } },
+        { binding: 1, resource: cubemapSampler },
+        { binding: 2, resource: cubemapTexture.createView() },
+      ],
+    });
 
   context.configure({
     device,
@@ -554,9 +602,19 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const now = Date.now();
     const deltaTime = (now - lastFrameMS) / 1000;
     lastFrameMS = now;
+    // Update camera
     const viewMatrix = camera.update(deltaTime, inputHandler());
+
+    // Render skybox
+    const skyboxViewMatrix = mat4.clone(viewMatrix);
+    skyboxViewMatrix[12] = 0; // Remove translation component
+    skyboxViewMatrix[13] = 0;
+    skyboxViewMatrix[14] = 0;
+    renderSkybox(device, canvas, skyboxViewMatrix, projectionMatrix, skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup);
+
+    //const viewMatrix = camera.update(deltaTime, inputHandler());
     // Render the skybox
-    renderSkybox(device, canvas, viewMatrix, projectionMatrix);
+    //renderSkybox(device, canvas, viewMatrix, projectionMatrix);
     //TODO: how to bind weather Data per frame
     let weatherData;
 
