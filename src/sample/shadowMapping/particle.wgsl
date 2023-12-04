@@ -358,14 +358,15 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     }
     var slope = degrees(celldata.Inclination);
     var f = select(0.0, slope / 60.0, slope < 15.0);
-	  var a3 = 50.0;
+	  var a3 = 5.0;
 
-    celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature);
+    // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature);
+    celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f);
 
     //celldata.Curvature-=0.001;
     data.cells[idx] = celldata;
     //var output_color: f32=celldata.SnowAlbedo;
-    var output_color: f32=celldata.InterpolatedSWE * 1.0;
+    var output_color: f32=celldata.InterpolatedSWE * 0.5;
     var debug_color_y: f32 = f32(coord.y) / f32(textureDimensions(texture2).y);
     var debug_color_x: f32 = f32(coord.x) / f32(textureDimensions(texture2).x);
     

@@ -232,7 +232,7 @@ async function generateTerrainCells(mesh) {
       cells.SnowWaterEquivalent[cellIndex] = snowWaterEquivalent;
 
       // TODO: Curvature
-      cells.Curvature[cellIndex] = 1.0;
+      // cells.Curvature[cellIndex] = 1.0;
       cellIndex++;
     }
   }

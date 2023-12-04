@@ -231,7 +231,7 @@ export function computeSnowCPU(cells) {
     var output_color: number=cells.InterpolatedSWE[idx];
 
 
-    console.log("snow data for cell: ", idx, " : ", cells.SnowWaterEquivalent[idx], " : ", cells.SnowAlbedo[idx]);
+    console.log("snow data for cell: ", idx, " : ", cells.InterpolatedSWE[idx], " : ", cells.SnowAlbedo[idx]);
     console.log("output_color: ", output_color);
   }
 }

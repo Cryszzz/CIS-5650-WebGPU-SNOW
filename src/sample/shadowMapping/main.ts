@@ -598,8 +598,10 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         0.0,
       ])
     );
-
-    // computeSnowCPU(terrainCells);
+    // if (now % 1000 > 500)
+    // {
+    //  computeSnowCPU(terrainCells);
+    // }
 
     mat4.identity(view);
     mat4.translate(view, vec3.fromValues(0, 0, -3), view);
