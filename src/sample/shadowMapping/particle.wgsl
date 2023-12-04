@@ -115,10 +115,12 @@ struct RenderParams {
 @binding(0) @group(0) var<uniform> render_params : RenderParams;
 @binding(1) @group(0) var fragtexture : texture_2d<f32>;
 @binding(2) @group(0) var origtexture : texture_2d<f32>;
+@binding(3) @group(0) var<uniform>  grid : vec2<f32>;
+@binding(4) @group(0) var heighttexture : texture_2d<f32>;
 
 struct VertexInput {
   @location(0) position : vec3<f32>,
-  @location(1) normal : vec3<f32>,
+  @location(1) normal : f32,
   @location(2) uv: vec2<f32>, // -1..+1
 }
 
@@ -129,16 +131,48 @@ struct VertexOutput {
 
   @builtin(position) Position : vec4<f32>,
 }
-
+const heightMul:f32=2000.0;
 @vertex
-fn vs_main(in : VertexInput) -> VertexOutput {
+fn vs_main(in : VertexInput,
+            @builtin(instance_index) instance: u32) -> VertexOutput {
   //var quad_pos = mat2x3<f32>(render_params.right, render_params.up) * in.quad_pos;
   //var position = in.position;
   var out : VertexOutput;
-  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(in.position, 1.0);
-  out.position=in.position;
-  out.normal = in.normal;
-  out.uv = in.uv;
+  
+  var textDim=vec2<i32>(textureDimensions(heighttexture));
+  //textDim=vec2<i32>(5,5);
+  let i = i32(instance);
+  let cell = vec2<i32>(i % (textDim.y - 1), i / (textDim.y - 1));
+  let p0:vec3<f32>=vec3<f32>(0.0,textureLoad(heighttexture,cell,0).x*heightMul,0.0);
+  let p1:vec3<f32>=vec3<f32>(grid.x,textureLoad(heighttexture,vec2<i32>(cell.x+1,cell.y),0).x*heightMul,0.0);
+  let p2:vec3<f32>=vec3<f32>(0.0,textureLoad(heighttexture,vec2<i32>(cell.x,cell.y+1),0).x*heightMul,grid.y);
+  let p3:vec3<f32>=vec3<f32>(grid.x,textureLoad(heighttexture,vec2<i32>(cell.x+1,cell.y+1),0).x*heightMul,grid.y);
+  /*let p0:vec3<f32>=vec3<f32>(0.0,0.0,0.0);
+  let p1:vec3<f32>=vec3<f32>(grid.x,30.0,0.0);
+  let p2:vec3<f32>=vec3<f32>(0.0,30.0,grid.y);
+  let p3:vec3<f32>=vec3<f32>(grid.x,90.0,grid.y);*/
+  var normal:vec3<f32>;
+  if(in.normal>0.0){
+    normal=normalize(cross(p2-p0,p3-p0));
+  }else{
+    normal=normalize(cross(p3-p0,p1-p0));
+  }
+  var coord:vec2<i32>=cell;
+  if(in.position.x > 0.0){
+    coord.x+=1;
+  }
+  if(in.position.z > 0.0){
+    coord.y+=1;
+  }
+  //let cell = vec2<i32>(i % 2, i / 2);
+  let cellOffset = vec2<f32>(cell-textDim/2)*grid;
+  var gridPos:vec2<f32> = (in.position.xz) * (grid/2.0) + cellOffset;
+  
+  var height:f32=textureLoad(heighttexture,coord,0).x;
+  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,height*heightMul,gridPos.y, 1.0);
+  out.position=vec3<f32>(gridPos.x,height*heightMul,gridPos.y);
+  out.normal =normal;
+  out.uv = vec2<f32>(f32(coord.x)/f32(textDim.x),f32(coord.y)/f32(textDim.y));
   return out;
 }
 
@@ -189,8 +223,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   coord.x=i32(f32(textorigDim.x)*in.uv.x);
   coord.y=i32(f32(textorigDim.y)*in.uv.y);
   var origcolor = textureLoad(origtexture, coord.xy, 0);
-  var out_color = (1.0-testcolor.x)*origcolor+testcolor.x*testcolor;
-
+  //var out_color = (1.0-testcolor.x)*origcolor+testcolor.x*testcolor;
+  var out_color = origcolor;
   let lambertFactor = max(dot(normalize(-lightDir), in.normal), 0.0);
   let lightingFactor = min(ambientFactor + lambertFactor, 1.0);
   var color = vec4(lightingFactor*out_color.xyz,1.0);

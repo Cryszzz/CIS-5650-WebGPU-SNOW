@@ -4,10 +4,12 @@ import { makeSample, SampleInit } from '../../components/SampleLayout';
 import particleWGSL from './particle.wgsl';
 import probabilityMapWGSL from './probabilityMap.wgsl';
 import { getTerrainMesh, getTerrainCells } from '../../meshes/terrain';
+import { getSquareMesh} from '../../meshes/square';
 import { WASDCamera, cameraSourceInfo } from './camera';
 import { createInputHandler, inputSourceInfo } from './input';
 import { getWeatherData } from './weather';
 import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours} from '../../meshes/utils';
+import { getHeightData, numberArray } from '../../meshes/geotiff-utils';
 
 const numParticles = 50000;
 const particlePositionOffset = 0;
@@ -84,6 +86,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   
 
   const mesh=await getTerrainMesh();
+  const smesh=await getSquareMesh();
   const terrainCells = await getTerrainCells(mesh);
   console.log(terrainCells.Size);
   /*
@@ -132,9 +135,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   }
   
   
-  const indexCount = mesh.triangles.length * 3;
+  const indexCount = smesh.triangles.length * 3;
   console.log("buffer size"+indexCount * Uint16Array.BYTES_PER_ELEMENT);
-  console.log("mesh.triangles.length: " + mesh.triangles.length)
+  console.log("mesh.triangles.length: " + smesh.triangles.length)
   const indexBuffer = device.createBuffer({
     label: "index buffer",
     size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
@@ -143,30 +146,30 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   });
   {
     const mapping = new Uint16Array(indexBuffer.getMappedRange());
-    for (let i = 0; i < mesh.triangles.length; ++i) {
-      mapping.set(mesh.triangles[i], 3 * i);
+    for (let i = 0; i < smesh.triangles.length; ++i) {
+      mapping.set(smesh.triangles[i], 3 * i);
     }
     indexBuffer.unmap();
   }
   const vertexBuffer = device.createBuffer({
     label: "vertex buffer",
-    size: mesh.positions.length * 8 * Float32Array.BYTES_PER_ELEMENT,
+    size: smesh.positions.length * 6 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.VERTEX,
     mappedAtCreation: true,
   });
   
   {
     const mapping = new Float32Array(vertexBuffer.getMappedRange());
-    for (let i = 0; i < mesh.positions.length; ++i) {
-      mapping.set(mesh.positions[i], 8 * i);
-      mapping.set(mesh.normals[i], 8 * i + 3);
-      mapping.set(mesh.uvs[i], 8 * i+6);
+    for (let i = 0; i < smesh.positions.length; ++i) {
+      mapping.set(smesh.positions[i], 6 * i);
+      mapping.set(smesh.normals[i], 6 * i + 3);
+      mapping.set(smesh.uvs[i], 6 * i+4);
     }
     vertexBuffer.unmap();
   }
   const vertexBuffers: Iterable<GPUVertexBufferLayout> = [
     {
-      arrayStride: Float32Array.BYTES_PER_ELEMENT * 8,
+      arrayStride: Float32Array.BYTES_PER_ELEMENT * 6,
       attributes: [
         {
           // position
@@ -178,12 +181,12 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
           // normal
           shaderLocation: 1,
           offset: Float32Array.BYTES_PER_ELEMENT * 3,
-          format: 'float32x3',
+          format: 'float32',
         },
         {
           // uv
           shaderLocation: 2,
-          offset: Float32Array.BYTES_PER_ELEMENT * 6,
+          offset: Float32Array.BYTES_PER_ELEMENT * 4,
           format: 'float32x2',
         },
       ],
@@ -266,6 +269,59 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       [imageBitmap.width, imageBitmap.height]
     );
   }
+  let heightTexture: GPUTexture;
+  {
+    const response = await fetch('../assets/img/file/height1.png');
+    //const response = await fetch('../assets/img/Di-3d.png');
+    const imageBitmap = await createImageBitmap(await response.blob());
+
+    heightTexture = device.createTexture({
+      size: [imageBitmap.width, imageBitmap.height, 1],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    device.queue.copyExternalImageToTexture(
+      { source: imageBitmap },
+      { texture: heightTexture },
+      [imageBitmap.width, imageBitmap.height]
+    );
+  }
+  console.log("amount of mesh:"+(heightTexture.width-1)*(heightTexture.height-1));
+  /*let heightTexture: GPUTexture;
+  {
+    const response = await fetch('../assets/img/file/everest.tif');
+    //const response = await fetch('../assets/img/Di-3d.png');
+    const url = '../assets/img/file/everest.tif';
+    //const url = '../assets/img/file/test2.tif';
+    const heightData = await getHeightData(url);
+    
+    heightTexture = device.createTexture({
+      size: [numberArray[0], numberArray[1],1],
+      format: "r32float",
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    const arrayBuffer = new Float32Array(heightData);
+    device.queue.writeTexture(
+      { texture: heightTexture },
+      arrayBuffer,
+      {},
+      { width: numberArray[0], height: numberArray[1] }
+    );
+  }*/
+  //heightTexture=cubeTexture;
+  const uniformArray = new Float32Array([1.0, 1.0]);
+  const gridBuffer = device.createBuffer({
+    label: "Grid Uniforms",
+    size: uniformArray.byteLength,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+  device.queue.writeBuffer(gridBuffer, 0, uniformArray);
   const uniformBindGroup = device.createBindGroup({
     layout: renderPipeline.getBindGroupLayout(0),
     entries: [
@@ -282,6 +338,16 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       {
         binding: 2,
         resource: cubeTexture.createView(),
+      },
+      {
+        binding: 3,
+        resource: {
+          buffer: gridBuffer,
+        }
+      },
+      {
+        binding: 4,
+        resource: heightTexture.createView(),
       },
     ],
   });
@@ -641,8 +707,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       passEncoder.setPipeline(renderPipeline);
       passEncoder.setBindGroup(0, uniformBindGroup);
       passEncoder.setVertexBuffer(0, vertexBuffer);
-      passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-      passEncoder.drawIndexed(indexCount);
+      //passEncoder.setIndexBuffer(indexBuffer, 'uint16');
+      passEncoder.draw(indexCount,(heightTexture.width-1)*(heightTexture.height-1));//(heightTexture.width-1)*(heightTexture.height-1)
       passEncoder.end();
     }
 
