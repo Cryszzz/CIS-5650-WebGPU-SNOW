@@ -9,6 +9,7 @@ import { createInputHandler, inputSourceInfo } from './input';
 import { getWeatherData } from './weather';
 import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours, getNumHoursPassed, getNumDaysPassed} from '../../meshes/utils';
 import { computeSnowCPU } from './snowCompute';
+import { max } from 'wgpu-matrix/dist/2.x/vec2-impl';
 
 const numParticles = 50000;
 const particlePositionOffset = 0;
@@ -74,8 +75,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   }
 
   gui.add(cameraParams, 'resetCamera').name("Reset Camera");
-  gui.add(weatherParams, 'guiTemperature').name("Temperature");
-  gui.add(weatherParams, 'guiPrecipitation').name("Precipitation");
+  gui.add(weatherParams, 'guiTemperature', -50.0, 50.0).name("Temperature");
+  gui.add(weatherParams, 'guiPrecipitation', 0.0, 3.0).name("Precipitation");
   gui.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
 
 
@@ -152,6 +153,17 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     }
     cellBuffer.unmap();
   }
+      
+    const maxBuffer = device.createBuffer({
+      size: 4 * 4,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      // mappedAtCreation: true,
+    });
+    // {
+    //   const mapping = new Int32Array(maxBuffer.getMappedRange());
+    //   mapping.set([0,0,0,0]);
+    //   maxBuffer.unmap();
+    // }
   
   
   const indexCount = mesh.triangles.length * 3;
@@ -211,6 +223,39 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       ],
     },
   ];
+
+  // not needed
+  // const renderPipelineBindGroupLayout = device.createBindGroupLayout({
+  //   entries: [
+  //     {
+  //       binding: 0,
+  //       visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+  //       buffer : {}
+  //     },
+  //     {
+  //       binding: 1,
+  //       visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+  //       texture: {}
+  //     },
+  //     {
+  //       binding: 2,
+  //       visibility: GPUShaderStage.FRAGMENT,
+  //       texture: {}
+  //     },
+  //     {
+  //       binding: 3,
+  //       visibility: GPUShaderStage.FRAGMENT,
+  //       buffer: {}
+  //     },
+  //   ],
+  // });
+
+  // const renderPipelineLayout = device.createPipelineLayout({
+  //   bindGroupLayouts: [
+  //     renderPipelineBindGroupLayout, // @group(0)
+  //   ]
+  // });
+
   const renderPipeline = device.createRenderPipeline({
     layout: 'auto',
     vertex: {
@@ -250,7 +295,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   });
   const writableTexture = device.createTexture({
     size: [mesh.width-1, mesh.height-1, 1],
-    format: 'rgba8unorm', // Adjust based on your requirements
+    format: 'rgba32float', // Adjust based on your requirements
     usage:
         GPUTextureUsage.TEXTURE_BINDING |
         GPUTextureUsage.STORAGE_BINDING |
@@ -304,6 +349,12 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       {
         binding: 2,
         resource: cubeTexture.createView(),
+      },
+      {
+        binding: 3,
+        resource: {
+          buffer: maxBuffer,
+        }
       },
     ],
   });
@@ -538,10 +589,16 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         binding: 3,
         //resource: cubeTexture.createView(),
         resource: writableTexture.createView({
-            format: 'rgba8unorm',
+            format: 'rgba32float',
             dimension: '2d',
           }
         ),
+      },
+      {
+        binding: 4,
+        resource: {
+          buffer: maxBuffer,
+        }
       },
     ],
   });
@@ -555,7 +612,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     (2 * Math.PI) / 5,
     aspect,
     1,
-    2000.0
+    5000.0
   );
 
   const modelViewProjectionMatrix = mat4.create();
@@ -572,6 +629,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
 
   function frame() {
     // Sample is no longer the active page.
+    // console.log("loading");
     if (!pageState.active) return;
     const now = Date.now();
     const deltaTime = (now - lastFrameMS) / 1000;
@@ -621,10 +679,11 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         0.0,
       ])
     );
-    // if (now % 1000 > 500)
+    // if (now % 1000 > 998)
     // {
     //   if (weatherParams.useGuiWeather)
     //   {
+    //     console.log("use gui weather");
     //     computeSnowCPU(terrainCells, weatherParams.guiTemperature, weatherParams.guiPrecipitation)
     //   }
     //   else
@@ -667,6 +726,17 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
         0, // padding
       ])
     );
+
+    let maxArray = new Uint32Array([0,0,0,0]);
+
+    device.queue.writeBuffer(
+      maxBuffer,
+      0,
+      maxArray.buffer,
+      maxArray.byteOffset,
+      maxArray.byteLength
+    );
+    
     const swapChainTexture = context.getCurrentTexture();
     // prettier-ignore
     renderPassDescriptor.colorAttachments[0].view = swapChainTexture.createView();

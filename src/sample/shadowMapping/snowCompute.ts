@@ -142,22 +142,23 @@ function SolarRadiationIndex(I: number, A: number, L0: number, J: number){
 
 export function computeSnowCPU(cells, temperature?, precipitation?) {
   // console.log("test");
+  let max = 0;
   for (let idx = 0; idx < cells.Inclination.length; idx++) {
     // var celldata = cells[idx];
         
-    var areaSquareMeters:number = cells.AreaXZ[idx] * 10000; // m^2 Each cell is constant 20000m^2 for now
-    console.log("areaSquareMeters: ", areaSquareMeters);
+    var areaSquareMeters:number = cells.AreaXZ[idx] * 100; // m^2 Each cell is constant 20000m^2 for now
+    // console.log("areaSquareMeters: ", areaSquareMeters);
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
     var stationAltitudeOffset:number = cells.Altitude[idx] - SimulationCSConstants.MeasurementAltitude;
     var temperatureLapse:number = - (0.5 * stationAltitudeOffset) / (100.0 * 100.0);
 
-    var tAir:number= temperature ? temperature + temperatureLapse : sim_params.Temperature + temperatureLapse; // degree Celsius
+    var tAir:number= typeof temperature !== 'undefined' ? temperature + temperatureLapse : sim_params.Temperature + temperatureLapse; // degree Celsius
 
     var precipitationLapse:number= 10.0 / 24.0 * stationAltitudeOffset / (100.0 * 1000.0);
         // const precipitationLapse: number = 0;
-    var precipitationNum:number = precipitation ? precipitation : sim_params.Precipitation;
-
+    var precipitationNum:number = typeof precipitation !== 'undefined' ? precipitation : sim_params.Precipitation;
+    console.log("precipitationNum: ", precipitationNum);
     cells.DaysSinceLastSnowfall[idx] += 1.0 / 24.0;
 
       // Apply precipitation
@@ -175,6 +176,7 @@ export function computeSnowCPU(cells, temperature?, precipitation?) {
             var snowRate:number= Math.max(0.0, 1.0 - (tAir - SimulationCSConstants.TSnowA) / (SimulationCSConstants.TSnowB - SimulationCSConstants.TSnowA));
 
             cells.SnowWaterEquivalent[idx] += (precipitationNum * areaSquareMeters * snowRate); // l/m^2 * m^2 = l
+            console.log("snow water equivalent with precip: ", cells.SnowWaterEquivalent[idx])
             cells.SnowAlbedo[idx] = 0.8; // New snow sets the albedo to 0.8
         }
     }
@@ -215,10 +217,10 @@ export function computeSnowCPU(cells, temperature?, precipitation?) {
             }
 
             var m: number = c_m * meltFactor; // l/C� * C� = l
-            console.log("melt factor: ", m);
+            // console.log("melt factor: ", m);
             // Apply melt
             cells.SnowWaterEquivalent[idx] -= m;
-            console.log("snow water equivalent: ", cells.SnowWaterEquivalent[idx]);
+            console.log("snow water equivalent with no precip: ", cells.SnowWaterEquivalent[idx]);
             cells.SnowWaterEquivalent[idx] = Math.max(0.0, cells.SnowWaterEquivalent[idx]);
         }
     }
@@ -229,11 +231,20 @@ export function computeSnowCPU(cells, temperature?, precipitation?) {
 
 	  let f = (slope < 15) ? 0 : slope / 60;
     let a3 = 50.0;
-    cells.InterpolatedSWE[idx] = cells.SnowWaterEquivalent[idx] * (1 - f) * (1 + a3 * cells.Curvature[idx]);
+    cells.InterpolatedSWE[idx] = Math.max(0, cells.SnowWaterEquivalent[idx] * (1 - f) * (1 + a3 * cells.Curvature[idx]));
     var output_color: number=cells.InterpolatedSWE[idx];
-
-
+    if (output_color > max) {
+      max = output_color;
+    }
     // console.log("snow data for cell: ", idx, " : ", cells.InterpolatedSWE[idx], " : ", cells.SnowAlbedo[idx]);
     // console.log("output_color: ", output_color);
+  }
+  
+  console.log("max: ", max);
+  for (let idx = 0; idx < cells.Inclination.length; idx++) {
+    if (cells.InterpolatedSWE[idx] / max > 0.8)
+    {
+      console.log(cells.InterpolatedSWE[idx] / max);
+    }
   }
 }

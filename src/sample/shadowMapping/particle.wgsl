@@ -113,13 +113,16 @@ struct RenderParams {
   up : vec3<f32>
 }
 @binding(0) @group(0) var<uniform> render_params : RenderParams;
+// @binding(1) @group(0) var fragtexture : texture_storage_2d<f32, read>;
 @binding(1) @group(0) var fragtexture : texture_2d<f32>;
 @binding(2) @group(0) var origtexture : texture_2d<f32>;
+@binding(3) @group(0) var<storage, read> maxSnow : array<u32>;
 
 struct VertexInput {
   @location(0) position : vec3<f32>,
   @location(1) normal : vec3<f32>,
-  @location(2) uv: vec2<f32>, // -1..+1
+  @location(2) uv: vec2<f32>, // -1..+1,
+  // @location(3) texCoords: vec2<f32>, // 0..1
 }
 
 struct VertexOutput {
@@ -130,13 +133,23 @@ struct VertexOutput {
   @builtin(position) Position : vec4<f32>,
 }
 
+// TODO: displacement map for position
 @vertex
 fn vs_main(in : VertexInput) -> VertexOutput {
   //var quad_pos = mat2x3<f32>(render_params.right, render_params.up) * in.quad_pos;
   //var position = in.position;
+  var textDim=vec2<i32>(textureDimensions(fragtexture).xy);
+  var coord : vec2<i32>=vec2<i32>(0,0);
+
+  coord.x=i32(f32(textDim.x)*in.uv.x);
+  coord.y=i32(f32(textDim.y)*in.uv.y);
+  var testcolor = textureLoad(fragtexture, coord.xy, 0);
+  var testColorMax = clamp(testcolor * 8 / (f32(maxSnow[0])), vec4(0.0), vec4(6.0));
+  var in_position_height_offset = vec3<f32>(in.position.x, in.position.y + testColorMax.x, in.position.z);
+
   var out : VertexOutput;
-  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(in.position, 1.0);
-  out.position=in.position;
+  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(in_position_height_offset, 1.0);
+  out.position=in_position_height_offset;
   out.normal = in.normal;
   out.uv = in.uv;
   return out;
@@ -165,7 +178,7 @@ fn main(
 
 const lightPos : vec3<f32>= vec3<f32> (50.0, 100.0, -100.0);
 const lightDir : vec3<f32>= vec3<f32> (1.0, -1.0, 0.0);
-const ambientFactor = 0.2;
+const ambientFactor = 0.4;
 /*
 CRYSTAL: There are two texture bind to fragment shader
 fragtexture: the texture buffer that got from compute pipeline
@@ -189,8 +202,16 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   coord.x=i32(f32(textorigDim.x)*in.uv.x);
   coord.y=i32(f32(textorigDim.y)*in.uv.y);
   var origcolor = textureLoad(origtexture, coord.xy, 0);
-  var out_color = (1.0-testcolor.x)*origcolor+testcolor.x*testcolor;
-  // var out_color = testcolor;
+
+  // this should be maxSnow[0] instead of maxSnow[0] * 0.4, but leaving it here until debugged
+  // var testColorMaxFirst = clamp(testcolor / (f32(maxSnow[0]) * 0.35), vec4(0.0), vec4(1.0));
+  var testColorMaxFirst = testcolor / (f32(maxSnow[0]) * 0.35);
+  var expFactors = vec4<f32>(2.0);
+  var testColorMaxScaled =  testColorMaxFirst * 0.7 + 0.25;
+  var testcolorMax = clamp(testColorMaxScaled, vec4(0.0), vec4(1.0));
+  // var out_color = testcolorMax;
+  var out_color = (1.0-testcolorMax.x)*origcolor+testcolorMax.x*testcolorMax;
+  // var out_color = vec4(maxSnow[0]);
 
   let lambertFactor = max(dot(normalize(-lightDir), in.normal), 0.0);
   let lightingFactor = min(ambientFactor + lambertFactor, 1.0);
@@ -256,7 +277,8 @@ struct Cells {
 @binding(0) @group(0) var<uniform> sim_params : SimulationParams;
 @binding(1) @group(0) var<storage, read_write> data : Cells;
 @binding(2) @group(0) var texture : texture_2d<f32>;
-@binding(3) @group(0) var texture2 : texture_storage_2d<rgba8unorm, write>;
+@binding(3) @group(0) var texture2 : texture_storage_2d<rgba32float, write>;
+@binding(4) @group(0) var<storage, read_write> maxSnowStorage : array<atomic<u32>>;
 
 @compute @workgroup_size(8,8)
 fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
@@ -281,7 +303,7 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     //CRYSTAL: starting from this part, use the same code from that unreal project
     var celldata = data.cells[idx];
     
-    var areaSquareMeters:f32 = celldata.AreaXY * 10; // m^2
+    var areaSquareMeters:f32 = celldata.AreaXY * 100; // m^2 Each cell is constant 2000m^2 for now
     // var areaSquareMetersPrecip:f32 = celldata.AreaXY / 1000; // m^2
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
@@ -347,11 +369,11 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             if(tAir < SimulationCSConstants.TMeltB){
                 meltFactor=(tAir - SimulationCSConstants.TMeltA) * (tAir - SimulationCSConstants.TMeltA) / (SimulationCSConstants.TMeltB - SimulationCSConstants.TMeltA);
             }else{
-                meltFactor=tAir - SimulationCSConstants.TMeltA;
+                meltFactor=5 * (tAir - SimulationCSConstants.TMeltA);
             }
 
             // Added factor to speed up melting
-            var m: f32 = c_m * meltFactor * 10; // l/C� * C� = l 
+            var m: f32 = c_m * meltFactor; // l/C� * C� = l 
 
             // Apply melt
             celldata.SnowWaterEquivalent -= m;
@@ -363,13 +385,14 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     // var f = select(0, slope / 60, slope < 15.0);
 	  var a3 = 50.0;
 
-    celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f);
-    // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature);
+    // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f);
+    celldata.InterpolatedSWE = max(celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature), 0.0);
     // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent;
     //celldata.Curvature-=0.001;
     data.cells[idx] = celldata;
     //var output_color: f32=celldata.SnowAlbedo;
-    var output_color: f32=celldata.InterpolatedSWE;
+    var output_color: f32=celldata.InterpolatedSWE * 0.7;
+    atomicMax(&maxSnowStorage[0],u32(output_color));
     var debug_color_y: f32 = f32(coord.y) / f32(textureDimensions(texture2).y);
     var debug_color_x: f32 = f32(coord.x) / f32(textureDimensions(texture2).x);
     

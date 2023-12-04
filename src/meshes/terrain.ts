@@ -8,7 +8,7 @@ const EPSILON = 0.00001;
 
 async function loadAndUseHeightData() {
     const url = '../assets/img/file/everest.tif';
-    //const url = '../assets/img/file/test2.tif';
+    // const url = '../assets/img/file/test2.tif';
     const heightData = await getHeightData(url);
     imgText[0] = numberArray[0];
     imgText[1] = numberArray[1];
@@ -25,7 +25,6 @@ async function generateTerrainMesh() {
     const width = imgText[0];
     //const height = 160;
     //const width = 190;
-    const terrainSize = 1000;
     const gridSpacing = 1;
     // const gridSpacing = 4;
     const skip=2;
@@ -45,8 +44,9 @@ async function generateTerrainMesh() {
 
           const data=heightData[x*height+z];
           //console.log(data);
-          positions.push([(x - width / 2)*gridSpacing, data/100, (z - height / 2)*gridSpacing]);
+          positions.push([(x - width / 2)*gridSpacing, data / 100, (z - height / 2)*gridSpacing]);
           //positions.push([(x - width / 2)*gridSpacing, 0, (z - height / 2)*gridSpacing]);
+          // TODO: I think there may still be a bug with UV
           uvs.push([x/(verticesPerRow*skip)*uvrepeat,1.0-z/(verticesPerRow*skip)*uvrepeat]);
           
         }
@@ -220,9 +220,9 @@ async function generateTerrainCells(mesh) {
       if (cells.Altitude[cellIndex] / 100.0 > 3300.0) {
         let areaSquareMeters = cells.Area[cellIndex] / (100 * 100);
         let we = (2.5 + cells.Altitude[cellIndex] / 100 * 0.001) * areaSquareMeters;
-
+        console.log("initial swe: " + we);
         snowWaterEquivalent = we;
-
+      // TODO: bind max snow buffer to this number
         initialMaxSnow = Math.max(snowWaterEquivalent / areaSquareMeters, initialMaxSnow);
       }
       
@@ -258,7 +258,8 @@ async function generateTerrainCells(mesh) {
       if (neighborsIndices[0] == -1 || neighborsIndices[1] == -1 || neighborsIndices[2] == -1 || neighborsIndices[3] == -1
         || neighborsIndices[4] == -1 || neighborsIndices[5] == -1 || neighborsIndices[6] == -1 || neighborsIndices[7] == -1)
         {
-          cells.Curvature[index] = 0.0;
+          cells.Curvature[index] = 0.0005;
+          continue;
         }
 
       let Z1 = cells.Altitude[neighborsIndices[1]] / 100; // NW
@@ -276,7 +277,7 @@ async function generateTerrainCells(mesh) {
       let D = ((Z4 + Z6) / 2 - Z5) / (L * L);
       let E = ((Z2 + Z8) / 2 - Z5) / (L * L);
       cells.Curvature[index] = 2 * (D + E);
-      console.log("curvature: ", cells.Curvature[index]);
+      // console.log("curvature: ", cells.Curvature[index]);
     }
   }
   return cells;
