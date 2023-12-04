@@ -4,7 +4,7 @@
 
 by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
-![Teaser](img/teaser.png)
+![Teaser](img/teaser.gif)
 
 ## Installation
 1. Clone this repo
@@ -31,7 +31,7 @@ by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
 This project implements a real-time snow accumulation simulation based on the paper: [Real-time GIS-based snow cover approximation and rendering for large terrains](https://www.sciencedirect.com/science/article/pii/S0097849317301693?fr=RR-2&ref=pdf_download&rr=821fc7e57b5d421b). The paper uses Unreal Engine as a basis for its simulation, but this project attempts to bring it to the mobile platform of the everyday browser using WebGPU as its framework for both simulation and rendering.
 
-![Snow-Accumulation-Gif]()
+<!-- ![Snow-Accumulation-Gif]() -->
 
 ## Pipeline
 We use compute shaders written in WGSL for WebGPU to simulate our snow accumulation. The overall pipeline can be broken down into 5 stages:
@@ -62,7 +62,7 @@ For each terrain cell, a snow-water equivalent (SWE), which represents the amoun
 ### Terrain & Snow Rendering
 Using our displacement and color map output from the compute shader, we interpolate between the texture of the terrain given from our GeoTIFF data and our snow data. A displacement map is used to simulate the appearance of snow rising and disappearing throughout the seasons of our simulation, and can be used to visualize the differences in snow accumulation between different types of terrain. In addition, a skybox is rendered behind our terrain to enhance the visual appearance and atmosphere of our scene.
 
-![Terrain Rendering](img/terrain-rendering.png)
+![Terrain Rendering](img/terrain-zoomed-out.png)
 
 
 ### Performance Notes

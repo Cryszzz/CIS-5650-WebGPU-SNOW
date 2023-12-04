@@ -741,7 +741,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const swapChainTexture = context.getCurrentTexture();
     // prettier-ignore
     renderPassDescriptor.colorAttachments[0].view = swapChainTexture.createView();
-
+    
     const commandEncoder = device.createCommandEncoder();
     {
       const passEncoder = commandEncoder.beginComputePass();

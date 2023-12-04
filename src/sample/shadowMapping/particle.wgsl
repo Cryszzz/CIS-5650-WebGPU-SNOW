@@ -256,7 +256,7 @@ InterpolatedSWE: number[],
 SnowAlbedo: number[],
 DaysSinceLastSnowfall: number[],
 Curvature: number[],*/
-struct Cell {
+struct Cell { 
   Aspect: f32,
   Inclination: f32,
   Altitude: f32,
@@ -303,7 +303,7 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     //CRYSTAL: starting from this part, use the same code from that unreal project
     var celldata = data.cells[idx];
     
-    var areaSquareMeters:f32 = celldata.AreaXY * 100; // m^2 Each cell is constant 2000m^2 for now
+    var areaSquareMeters:f32 = celldata.AreaXY * 10; // m^2 Each cell is constant 2000m^2 for now
     // var areaSquareMetersPrecip:f32 = celldata.AreaXY / 1000; // m^2
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
@@ -367,9 +367,9 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             var c_m: f32 = SimulationCSConstants.k_m * k_v * r_i_t * (1.0 - celldata.SnowAlbedo) * dayNormalization * areaSquareMeters; // l/m^2/C�/day * day * m^2 = l/m^2 * 1/day * day * m^2 = l/C�
             var meltFactor: f32;
             if(tAir < SimulationCSConstants.TMeltB){
-                meltFactor=(tAir - SimulationCSConstants.TMeltA) * (tAir - SimulationCSConstants.TMeltA) / (SimulationCSConstants.TMeltB - SimulationCSConstants.TMeltA);
+                meltFactor=2 * (tAir - SimulationCSConstants.TMeltA) * (tAir - SimulationCSConstants.TMeltA) / (SimulationCSConstants.TMeltB - SimulationCSConstants.TMeltA);
             }else{
-                meltFactor=5 * (tAir - SimulationCSConstants.TMeltA);
+                meltFactor=2 * (tAir - SimulationCSConstants.TMeltA);
             }
 
             // Added factor to speed up melting
