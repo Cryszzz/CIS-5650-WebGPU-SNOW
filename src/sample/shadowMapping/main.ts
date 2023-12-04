@@ -83,6 +83,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const skyboxPipeline = await createSkyboxPipeline(device, presentationFormat);
 
     // Initialize the vertex buffer for the skybox
+    console.log("binding for skybox vertex buffer");
     const skyboxVerticesBuffer = device.createBuffer({
       size: cubeVertexArray.byteLength,
       usage: GPUBufferUsage.VERTEX,
@@ -90,7 +91,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     });
     new Float32Array(skyboxVerticesBuffer.getMappedRange()).set(cubeVertexArray);
     skyboxVerticesBuffer.unmap();
-  
+    console.log("done for binding for skybox vertex buffer");
     // Initialize the uniform buffer for the skybox
     const skyboxUniformBuffer = device.createBuffer({
       size: 16 * 4,  // Size for 2 4x4 matrices (view and projection)
@@ -113,12 +114,16 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     // Initialize the uniform bind group for the skybox
     const skyboxUniformBindGroup = device.createBindGroup({
       layout: skyboxPipeline.getBindGroupLayout(0),
+      label: "skybox group",
       entries: [
-        { binding: 0, resource: { buffer: skyboxUniformBuffer } },
+        { binding: 0, resource: { buffer: skyboxUniformBuffer,size: 4*16,} },
         { binding: 1, resource: cubemapSampler },
-        { binding: 2, resource: cubemapTexture.createView() },
+        { binding: 2, resource: cubemapTexture.createView({
+          dimension: 'cube',
+        }) },
       ],
     });
+    console.log(skyboxUniformBindGroup);
 
   context.configure({
     device,
@@ -610,7 +615,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     skyboxViewMatrix[12] = 0; // Remove translation component
     skyboxViewMatrix[13] = 0;
     skyboxViewMatrix[14] = 0;
-    renderSkybox(device, canvas, skyboxViewMatrix, projectionMatrix, skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup);
+    
 
     //const viewMatrix = camera.update(deltaTime, inputHandler());
     // Render the skybox
@@ -690,8 +695,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const swapChainTexture = context.getCurrentTexture();
     // prettier-ignore
     renderPassDescriptor.colorAttachments[0].view = swapChainTexture.createView();
-
+      
     const commandEncoder = device.createCommandEncoder();
+    
     {
       const passEncoder = commandEncoder.beginComputePass();
       passEncoder.setPipeline(computePipeline);
@@ -706,9 +712,10 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       passEncoder.setVertexBuffer(0, vertexBuffer);
       passEncoder.setIndexBuffer(indexBuffer, 'uint16');
       passEncoder.drawIndexed(indexCount);
+      renderSkybox(device, canvas, skyboxViewMatrix, projectionMatrix, skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup,passEncoder,cameraViewProj);
       passEncoder.end();
     }
-
+    
     device.queue.submit([commandEncoder.finish()]);
 
     requestAnimationFrame(frame);
