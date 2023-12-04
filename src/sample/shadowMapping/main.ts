@@ -1,5 +1,7 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
+import { renderSkybox } from './skyboxPipeline';
+
 
 import particleWGSL from './particle.wgsl';
 import probabilityMapWGSL from './probabilityMap.wgsl';
@@ -552,6 +554,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const now = Date.now();
     const deltaTime = (now - lastFrameMS) / 1000;
     lastFrameMS = now;
+    const viewMatrix = camera.update(deltaTime, inputHandler());
+    // Render the skybox
+    renderSkybox(device, canvas, viewMatrix, projectionMatrix);
     //TODO: how to bind weather Data per frame
     let weatherData;
 
@@ -562,7 +567,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
       // for (let i = 0; i < 10; i++) {
       //   console.log("now: " + now);
       //   console.log("day of year: " + getDayOfYear(now));
-      //   console.log("weather for cell: " + (i * 20));
+      //   console.lSog("weather for cell: " + (i * 20));
         // console.log("temperature: " + weatherData.temperature[i * 20]);
         // console.log("temperature: " + weatherData.temperature[20]);
       //   console.log("precipitation: " + weatherData.precipitation[i * 20]);
