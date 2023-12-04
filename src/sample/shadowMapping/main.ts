@@ -57,8 +57,8 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
 
   // Camera initialization
   let camera = setCamera();
-  let guiTemperature = 0;
-  let guiPrecipitation = 0;
+  let guiTemperature = 0.0;
+  let guiPrecipitation = 0.0;
 
   const cameraParams = 
   {
@@ -75,10 +75,11 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   }
 
   gui.add(cameraParams, 'resetCamera').name("Reset Camera");
-  gui.add(weatherParams, 'guiTemperature', -50.0, 50.0).name("Temperature");
-  gui.add(weatherParams, 'guiPrecipitation', 0.0, 3.0).name("Precipitation");
+  gui.add(weatherParams, 'guiTemperature', -50.0, 70.0).name("Temperature");
+  let precipController = gui.add(weatherParams, 'guiPrecipitation', 0.0, 2.5).name("Precipitation");
   gui.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
 
+  precipController = precipController.step(0.1);
 
   const devicePixelRatio = window.devicePixelRatio;
   canvas.width = canvas.clientWidth * devicePixelRatio;

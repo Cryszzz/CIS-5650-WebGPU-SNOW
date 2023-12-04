@@ -207,7 +207,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   // var testColorMaxFirst = clamp(testcolor / (f32(maxSnow[0]) * 0.35), vec4(0.0), vec4(1.0));
   var testColorMaxFirst = testcolor / (f32(maxSnow[0]) * 0.35);
   var expFactors = vec4<f32>(2.0);
-  var testColorMaxScaled =  testColorMaxFirst * 0.7 + 0.25;
+  var testColorMaxScaled =  testColorMaxFirst * 0.7 + 0.27;
   var testcolorMax = clamp(testColorMaxScaled, vec4(0.0), vec4(1.0));
   // var out_color = testcolorMax;
   var out_color = (1.0-testcolorMax.x)*origcolor+testcolorMax.x*testcolorMax;
