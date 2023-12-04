@@ -251,7 +251,7 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   });
   let cubeTexture: GPUTexture;
   {
-    const response = await fetch('../assets/img/file/rock.png');
+    const response = await fetch('../assets/img/file/k2-t.png');
     //const response = await fetch('../assets/img/Di-3d.png');
     const imageBitmap = await createImageBitmap(await response.blob());
 
@@ -292,10 +292,10 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
   
   let heightTexture: GPUTexture;
   {
-    const response = await fetch('../assets/img/file/everest.tif');
+    //const response = await fetch('../assets/img/file/k2-h.tif');
     //const response = await fetch('../assets/img/Di-3d.png');
     //const url = '../assets/img/file/everest.tif';
-    const url = '../assets/img/file/test2.tif';
+    const url = '../assets/img/file/k2-h.tif';
     const heightData = await getHeightData(url);
     
     heightTexture = device.createTexture({
