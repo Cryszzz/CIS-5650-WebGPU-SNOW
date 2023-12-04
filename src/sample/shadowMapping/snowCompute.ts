@@ -226,8 +226,11 @@ export function computeSnowCPU(cells) {
     let slope = radiansToDegrees(cells.Inclination[idx]);
 
 	  let f = (slope < 15) ? 0 : slope / 60;
-    cells.SnowWaterEquivalent[idx] = cells.SnowWaterEquivalent[idx] * (1 - f);
-    var output_color: number=cells.SnowWaterEquivalent[idx] * 0.01;
+    let a3 = 50.0;
+    cells.InterpolatedSWE[idx] = cells.SnowWaterEquivalent[idx] * (1 - f) * (1 + a3 * cells.Curvature[idx]);
+    var output_color: number=cells.InterpolatedSWE[idx];
+
+
     console.log("snow data for cell: ", idx, " : ", cells.SnowWaterEquivalent[idx], " : ", cells.SnowAlbedo[idx]);
     console.log("output_color: ", output_color);
   }
