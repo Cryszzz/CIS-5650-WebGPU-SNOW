@@ -31,6 +31,7 @@
     "simplex-noise": "^4.0.1",
     "stanford-dragon": "1.1.1",
     "stats-js": "^1.0.1",
+    "stats.js": "^0.17.0",
     "teapot": "1.0.0",
     "wgpu-matrix": "^2.5.0"
   },

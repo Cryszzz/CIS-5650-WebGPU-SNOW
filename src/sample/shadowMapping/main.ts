@@ -11,6 +11,7 @@ import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours, g
 import { computeSnowCPU } from './snowCompute';
 import { max } from 'wgpu-matrix/dist/2.x/vec2-impl';
 
+
 const numParticles = 50000;
 const particlePositionOffset = 0;
 const particleColorOffset = 4 * 4;
@@ -43,14 +44,14 @@ function setCamera(position?, target?)
 }
 
 
-const init: SampleInit = async ({ canvas, pageState, gui }) => {
+const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
  
-
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
 
   if (!pageState.active) return;
   const context = canvas.getContext('webgpu') as GPUCanvasContext;
+  stats.showPanel(0);
  
   // The input handler
   const inputHandler = createInputHandler(window, canvas);
@@ -74,12 +75,20 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     useGuiWeather: true,
   }
 
+  const statsParams =
+  {
+    showStats: true,
+    showMemoryUsage: false,
+  }
+
   gui.add(cameraParams, 'resetCamera').name("Reset Camera");
   gui.add(weatherParams, 'guiTemperature', -50.0, 70.0).name("Temperature");
   let precipController = gui.add(weatherParams, 'guiPrecipitation', 0.0, 2.5).name("Precipitation");
   gui.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
-
   precipController = precipController.step(0.1);
+
+  gui.add(statsParams, 'showStats').name("Show Stats");
+  gui.add(statsParams, 'showMemoryUsage').name("Memory Usage");
 
   const devicePixelRatio = window.devicePixelRatio;
   canvas.width = canvas.clientWidth * devicePixelRatio;
@@ -636,6 +645,23 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     const deltaTime = (now - lastFrameMS) / 1000;
     const deltaTimeFull = now - lastDayMS;
     lastFrameMS = now;
+    if (statsParams.showStats)
+    {
+      if (statsParams.showMemoryUsage)
+      {
+        stats.showPanel(2);
+      }
+      else
+      {
+        stats.showPanel(0);
+      }
+    }
+    else
+    {
+      stats.showPanel(3)
+    }
+
+
     //TODO: how to bind weather Data per frame
     if (getNumDaysPassed(deltaTimeFull) >= 1 && !weatherParams.useGuiWeather)
     {
@@ -742,6 +768,10 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     // prettier-ignore
     renderPassDescriptor.colorAttachments[0].view = swapChainTexture.createView();
     
+    if (statsParams.showStats) {
+      stats.begin();
+    }
+
     const commandEncoder = device.createCommandEncoder();
     {
       const passEncoder = commandEncoder.beginComputePass();
@@ -763,6 +793,9 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     device.queue.submit([commandEncoder.finish()]);
 
     requestAnimationFrame(frame);
+    if (statsParams.showStats) {
+      stats.end()
+    }
   }
   requestAnimationFrame(frame);
 };
@@ -773,6 +806,7 @@ const Particles: () => JSX.Element = () =>
     description:
       'This example demonstrates rendering of particles simulated with compute shaders.',
     gui: true,
+    stats: true,
     init,
     sources: [
       {
