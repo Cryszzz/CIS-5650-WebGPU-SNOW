@@ -1,5 +1,9 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
+import { renderSkybox } from './skyboxPipeline';
+import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../../meshes/cube';
+import { createSkyboxPipeline, loadCubemapTexture } from './skyboxPipeline';
+
 
 import particleWGSL from './particle.wgsl';
 import probabilityMapWGSL from './probabilityMap.wgsl';
@@ -44,7 +48,7 @@ function setCamera(position?, target?)
   return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
 }
 
-
+let skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup;
 const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
  
   const adapter = await navigator.gpu.requestAdapter();
@@ -95,6 +99,57 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   canvas.width = canvas.clientWidth * devicePixelRatio;
   canvas.height = canvas.clientHeight * devicePixelRatio;
   const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
+  
+  // Setup skybox pipeline here
+  //skyboxPipeline = await createSkyboxPipeline(device, presentationFormat);
+  // Initialize the skybox pipeline
+  //const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
+
+    // Initialize the skybox pipeline
+    const skyboxPipeline = await createSkyboxPipeline(device, presentationFormat);
+
+    // Initialize the vertex buffer for the skybox
+    console.log("binding for skybox vertex buffer");
+    const skyboxVerticesBuffer = device.createBuffer({
+      size: cubeVertexArray.byteLength,
+      usage: GPUBufferUsage.VERTEX,
+      mappedAtCreation: true,
+    });
+    new Float32Array(skyboxVerticesBuffer.getMappedRange()).set(cubeVertexArray);
+    skyboxVerticesBuffer.unmap();
+    console.log("done for binding for skybox vertex buffer");
+    // Initialize the uniform buffer for the skybox
+    const skyboxUniformBuffer = device.createBuffer({
+      size: 16 * 4,  // Size for 2 4x4 matrices (view and projection)
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+  
+    // Load the cubemap texture for the skybox
+    const cubemapTexture = await loadCubemapTexture(device);
+  
+    // Create a sampler for the cubemap texture
+    const cubemapSampler = device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+      mipmapFilter: 'linear',
+      addressModeU: 'clamp-to-edge',
+      addressModeV: 'clamp-to-edge',
+      addressModeW: 'clamp-to-edge',
+    });
+  
+    // Initialize the uniform bind group for the skybox
+    const skyboxUniformBindGroup = device.createBindGroup({
+      layout: skyboxPipeline.getBindGroupLayout(0),
+      label: "skybox group",
+      entries: [
+        { binding: 0, resource: { buffer: skyboxUniformBuffer,size: 4*16,} },
+        { binding: 1, resource: cubemapSampler },
+        { binding: 2, resource: cubemapTexture.createView({
+          dimension: 'cube',
+        }) },
+      ],
+    });
+    console.log(skyboxUniformBindGroup);
 
   context.configure({
     device,
@@ -728,6 +783,19 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     }
 
 
+    // Update camera
+    const viewMatrix = camera.update(deltaTime, inputHandler());
+
+    // Render skybox
+    const skyboxViewMatrix = mat4.clone(viewMatrix);
+    skyboxViewMatrix[12] = 0; // Remove translation component
+    skyboxViewMatrix[13] = 0;
+    skyboxViewMatrix[14] = 0;
+    
+
+    //const viewMatrix = camera.update(deltaTime, inputHandler());
+    // Render the skybox
+    //renderSkybox(device, canvas, viewMatrix, projectionMatrix);
     //TODO: how to bind weather Data per frame
     if (getNumDaysPassed(deltaTimeFull) >= 1 && !weatherParams.useGuiWeather)
     {
@@ -745,7 +813,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       // for (let i = 0; i < 10; i++) {
       //   console.log("now: " + now);
       //   console.log("day of year: " + getDayOfYear(now));
-      //   console.log("weather for cell: " + (i * 20));
+      //   console.lSog("weather for cell: " + (i * 20));
         // console.log("temperature: " + weatherData.temperature[i * 20]);
         // console.log("temperature: " + weatherData.temperature[20]);
       //   console.log("precipitation: " + weatherData.precipitation[i * 20]);
@@ -838,7 +906,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       stats.begin();
     }
 
+      
     const commandEncoder = device.createCommandEncoder();
+    
     {
       const passEncoder = commandEncoder.beginComputePass();
       passEncoder.setPipeline(computePipeline);
@@ -853,9 +923,12 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       passEncoder.setVertexBuffer(0, vertexBuffer);
       //passEncoder.setIndexBuffer(indexBuffer, 'uint16');
       passEncoder.draw(indexCount,(heightTexture.width-1)*(heightTexture.height-1));//(heightTexture.width-1)*(heightTexture.height-1)
+      // passEncoder.setIndexBuffer(indexBuffer, 'uint16');
+      // passEncoder.drawIndexed(indexCount);
+      renderSkybox(device, canvas, skyboxViewMatrix, projectionMatrix, skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup,passEncoder,cameraViewProj);
       passEncoder.end();
     }
-
+    
     device.queue.submit([commandEncoder.finish()]);
 
     requestAnimationFrame(frame);
