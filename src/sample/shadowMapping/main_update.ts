@@ -1,16 +1,11 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
+import { WASDCamera, cameraSourceInfo } from './camera';
+import { createInputHandler, inputSourceInfo } from './input';
 
 import particleWGSL from './particle.wgsl';
 import probabilityMapWGSL from './probabilityMap.wgsl';
-import { getTerrainMesh, getTerrainCells } from '../../meshes/terrain';
-import { WASDCamera, cameraSourceInfo } from './camera';
-import { createInputHandler, inputSourceInfo } from './input';
-import { getWeatherData } from './weather';
-import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours, getNumHoursPassed, getNumDaysPassed} from '../../meshes/utils';
-import { computeSnowCPU } from './snowCompute';
-import { max } from 'wgpu-matrix/dist/2.x/vec2-impl';
-
+import { getTerrainMesh } from '../../meshes/terrain';
 
 const numParticles = 50000;
 const particlePositionOffset = 0;
@@ -23,43 +18,25 @@ const particleInstanceByteSize =
   1 * 4 + // padding
   0;
 
-const cellInstanceByteSize =
-  11 * 4 + // data
-  1 * 4 + // padding
-  0;
-
-const cameraDefaults = {
-  position: vec3.create(0, 300, -80),
-  target: vec3.create(0, 0, 0),
-  // position: vec3.create(0, 5, -5),
-  // target: vec3.create(0, 0, 0),
-};
-
-
-function setCamera(position?, target?)
+  
+function setCamera(x: number = 0, y: number = 300, z: number = -80)
 {
-  const initialCameraPosition = position ? position : cameraDefaults.position;
-  const initialCameraTarget = target ? target : cameraDefaults.target;
+  const initialCameraPosition = vec3.create(x, y, z);
+  const initialCameraTarget = vec3.create(0, 250, 0);
   return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
 }
 
-
-const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
- 
+const init: SampleInit = async ({ canvas, pageState, gui }) => {
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
 
   if (!pageState.active) return;
-  const context = canvas.getContext('webgpu') as GPUCanvasContext;
-  stats.showPanel(0);
- 
+
   // The input handler
   const inputHandler = createInputHandler(window, canvas);
 
   // Camera initialization
   let camera = setCamera();
-  let guiTemperature = 0.0;
-  let guiPrecipitation = 0.0;
 
   const cameraParams = 
   {
@@ -68,27 +45,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     }
   };
 
-  const weatherParams = 
-  {
-    guiTemperature: guiTemperature,
-    guiPrecipitation: guiPrecipitation,
-    useGuiWeather: true,
-  }
-
-  const statsParams =
-  {
-    showStats: true,
-    showMemoryUsage: false,
-  }
-
   gui.add(cameraParams, 'resetCamera').name("Reset Camera");
-  gui.add(weatherParams, 'guiTemperature', -50.0, 70.0).name("Temperature");
-  let precipController = gui.add(weatherParams, 'guiPrecipitation', 0.0, 2.5).name("Precipitation");
-  gui.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
-  precipController = precipController.step(0.1);
 
-  gui.add(statsParams, 'showStats').name("Show Stats");
-  gui.add(statsParams, 'showMemoryUsage').name("Memory Usage");
+  const context = canvas.getContext('webgpu') as GPUCanvasContext;
 
   const devicePixelRatio = window.devicePixelRatio;
   canvas.width = canvas.clientWidth * devicePixelRatio;
@@ -101,104 +60,43 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     alphaMode: 'premultiplied',
   });
 
-  const particlesBuffer = device.createBuffer({
-    size: numParticles * particleInstanceByteSize,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-  });
-
-  
-
+  // Mesh
   const mesh=await getTerrainMesh();
-  const terrainCells = await getTerrainCells(mesh);
-  console.log(terrainCells.Size);
-  
-  const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
-                                  9 * mesh.width + 16, 9 * mesh.width + 17, 9 * mesh.width + 18,
-                                  11 * mesh.height + 6, 11 * mesh.height + 7, 9 * mesh.height + 15,
-                                  9 * mesh.height + 16, 9 * mesh.height + 17, 9 * mesh.height + 18,]
+  let cubeTexture: GPUTexture;
+  {
+    const response = await fetch('../assets/img/file/rock.png');
+    const imageBitmap = await createImageBitmap(await response.blob());
 
-  // for (let i = 0; i < 580; i += 20) {
-  for (let i = 0; i < terrainCellsDebugIndex.length; i++) {
-    const currIndex = terrainCellsDebugIndex[i];
-    console.log("Terrain Cell: " + currIndex)
-    // console.log("P0: " + i + " " + terrainCells.P0[i]);
-    // console.log("P1: " + i + " " + terrainCells.P1[i]);
-    // console.log("P2: " + i + " " + terrainCells.P2[i]);
-    // console.log("P3: " + i + " " + terrainCells.P3[i]);
-    console.log("Aspect: " + " " + terrainCells.Aspect[currIndex]);
-    console.log("Inclination: " + " " + terrainCells.Inclination[currIndex]);
-    console.log("Altitude: " + " " + terrainCells.Altitude[currIndex]);
-    // console.log("Latitude: " + i + " " + terrainCells.Latitude[i]);
-    console.log("Area: " + " " + terrainCells.Area[currIndex]);
-    console.log("AreaXZ: " + " " + terrainCells.AreaXZ[currIndex]);
-    // console.log("SnowWaterEquivalent: " + i + " " + terrainCells.SnowWaterEquivalent[i]);
-    // console.log("InterpolatedSWE: " + i + " " + terrainCells.InterpolatedSWE[i]);
-    // console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
-    // console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
-    // console.log("Curvature: " + i + " " + terrainCells.Curvature[i]);
-  // }
-  }
-  const cellBuffer = device.createBuffer({
-    size: terrainCells.Size * cellInstanceByteSize,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-    mappedAtCreation: true,
-  });
-  {
-    const mapping = new Float32Array(cellBuffer.getMappedRange());
-    for (let i = 0; i < terrainCells.Size; i++){
-      mapping.set([
-        terrainCells.Aspect[i],
-        terrainCells.Inclination[i],
-        terrainCells.Altitude[i],
-        terrainCells.Latitude[i],
-        terrainCells.Area[i],
-        terrainCells.AreaXZ[i],
-        terrainCells.SnowWaterEquivalent[i],
-        terrainCells.InterpolatedSWE[i],
-        terrainCells.SnowAlbedo[i],
-        terrainCells.DaysSinceLastSnowfall[i],
-        terrainCells.Curvature[i],
-        0.0,
-      ],i*12);
-    }
-    cellBuffer.unmap();
-  }
-      
-    const maxBuffer = device.createBuffer({
-      size: 4 * 4,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-      // mappedAtCreation: true,
+    cubeTexture = device.createTexture({
+      size: [imageBitmap.width, imageBitmap.height, 1],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
     });
-    // {
-    //   const mapping = new Int32Array(maxBuffer.getMappedRange());
-    //   mapping.set([0,0,0,0]);
-    //   maxBuffer.unmap();
-    // }
-  
-  
-  const indexCount = mesh.triangles.length * 3;
-  console.log("buffer size"+indexCount * Uint16Array.BYTES_PER_ELEMENT);
-  console.log("mesh.triangles.length: " + mesh.triangles.length)
-  const indexBuffer = device.createBuffer({
-    label: "index buffer",
-    size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
-    usage: GPUBufferUsage.INDEX,
-    mappedAtCreation: true,
-  });
-  {
-    const mapping = new Uint16Array(indexBuffer.getMappedRange());
-    for (let i = 0; i < mesh.triangles.length; ++i) {
-      mapping.set(mesh.triangles[i], 3 * i);
-    }
-    indexBuffer.unmap();
+    device.queue.copyExternalImageToTexture(
+      { source: imageBitmap },
+      { texture: cubeTexture },
+      [imageBitmap.width, imageBitmap.height]
+    );
   }
+
+  const sampler = device.createSampler({
+    magFilter: 'linear',
+    minFilter: 'linear',
+    mipmapFilter: 'linear',
+    addressModeU: 'repeat',
+    addressModeV: 'repeat',
+    addressModeW: 'repeat',
+  });
+
   const vertexBuffer = device.createBuffer({
     label: "vertex buffer",
     size: mesh.positions.length * 8 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.VERTEX,
     mappedAtCreation: true,
   });
-  
   {
     const mapping = new Float32Array(vertexBuffer.getMappedRange());
     for (let i = 0; i < mesh.positions.length; ++i) {
@@ -208,6 +106,13 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     }
     vertexBuffer.unmap();
   }
+
+
+  const particlesBuffer = device.createBuffer({
+    size: numParticles * particleInstanceByteSize,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+  });
+
   const vertexBuffers: Iterable<GPUVertexBufferLayout> = [
     {
       arrayStride: Float32Array.BYTES_PER_ELEMENT * 8,
@@ -234,45 +139,17 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     },
   ];
 
-  // not needed
-  // const renderPipelineBindGroupLayout = device.createBindGroupLayout({
-  //   entries: [
-  //     {
-  //       binding: 0,
-  //       visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-  //       buffer : {}
-  //     },
-  //     {
-  //       binding: 1,
-  //       visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-  //       texture: {}
-  //     },
-  //     {
-  //       binding: 2,
-  //       visibility: GPUShaderStage.FRAGMENT,
-  //       texture: {}
-  //     },
-  //     {
-  //       binding: 3,
-  //       visibility: GPUShaderStage.FRAGMENT,
-  //       buffer: {}
-  //     },
-  //   ],
-  // });
-
-  // const renderPipelineLayout = device.createPipelineLayout({
-  //   bindGroupLayouts: [
-  //     renderPipelineBindGroupLayout, // @group(0)
-  //   ]
-  // });
-
+  const primitive: GPUPrimitiveState = {
+    topology: 'triangle-list',
+    cullMode: 'back',
+  };
   const renderPipeline = device.createRenderPipeline({
     layout: 'auto',
     vertex: {
       module: device.createShaderModule({
         code: particleWGSL,
       }),
-      entryPoint: 'vs_main',
+      entryPoint: 'main',
       buffers: vertexBuffers,
     },
     fragment: {
@@ -283,35 +160,36 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       targets: [
         {
           format: presentationFormat,
+          blend: {
+            color: {
+              srcFactor: 'src-alpha',
+              dstFactor: 'one',
+              operation: 'add',
+            },
+            alpha: {
+              srcFactor: 'zero',
+              dstFactor: 'one',
+              operation: 'add',
+            },
+          },
         },
       ],
     },
-    primitive: {
-      topology: 'triangle-list',
-      //cullMode: 'back',
-    },
+    primitive,
 
     depthStencil: {
-      depthWriteEnabled: true,
+      depthWriteEnabled: false,
       depthCompare: 'less',
-      format: 'depth24plus-stencil8',
+      format: 'depth24plus',
     },
   });
 
   const depthTexture = device.createTexture({
     size: [canvas.width, canvas.height],
-    format: 'depth24plus-stencil8',
+    format: 'depth24plus',
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
-  const writableTexture = device.createTexture({
-    size: [mesh.width-1, mesh.height-1, 1],
-    format: 'rgba32float', // Adjust based on your requirements
-    usage:
-        GPUTextureUsage.TEXTURE_BINDING |
-        GPUTextureUsage.STORAGE_BINDING |
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.RENDER_ATTACHMENT,
-  });
+
   const uniformBufferSize =
     4 * 4 * 4 + // modelViewProjectionMatrix : mat4x4<f32>
     3 * 4 + // right : vec3<f32>
@@ -323,26 +201,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     size: uniformBufferSize,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
-  let cubeTexture: GPUTexture;
-  {
-    const response = await fetch('../assets/img/file/rock.png');
-    //const response = await fetch('../assets/img/Di-3d.png');
-    const imageBitmap = await createImageBitmap(await response.blob());
 
-    cubeTexture = device.createTexture({
-      size: [imageBitmap.width, imageBitmap.height, 1],
-      format: 'rgba8unorm',
-      usage:
-        GPUTextureUsage.TEXTURE_BINDING |
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-    device.queue.copyExternalImageToTexture(
-      { source: imageBitmap },
-      { texture: cubeTexture },
-      [imageBitmap.width, imageBitmap.height]
-    );
-  }
   const uniformBindGroup = device.createBindGroup({
     layout: renderPipeline.getBindGroupLayout(0),
     entries: [
@@ -351,20 +210,6 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         resource: {
           buffer: uniformBuffer,
         },
-      },
-      {
-        binding: 1,
-        resource: writableTexture.createView(),
-      },
-      {
-        binding: 2,
-        resource: cubeTexture.createView(),
-      },
-      {
-        binding: 3,
-        resource: {
-          buffer: maxBuffer,
-        }
       },
     ],
   });
@@ -384,9 +229,6 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       depthClearValue: 1.0,
       depthLoadOp: 'clear',
       depthStoreOp: 'store',
-      stencilClearValue: 0,
-      stencilLoadOp: 'clear',
-      stencilStoreOp: 'store',
     },
   };
 
@@ -405,11 +247,24 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   new Float32Array(quadVertexBuffer.getMappedRange()).set(vertexData);
   quadVertexBuffer.unmap();
 
+  const indexCount = mesh.triangles.length * 3;
+  console.log(mesh.triangles.length)
+  const indexBuffer = device.createBuffer({
+    label: "index buffer",
+    size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.INDEX,
+    mappedAtCreation: true,
+  });
+  {
+    const mapping = new Uint16Array(indexBuffer.getMappedRange());
+    for (let i = 0; i < mesh.triangles.length; ++i) {
+      mapping.set(mesh.triangles[i], 3 * i);
+    }
+    indexBuffer.unmap();
+  }
   //////////////////////////////////////////////////////////////////////////////
   // Texture
   //////////////////////////////////////////////////////////////////////////////
-  
-  
   let texture: GPUTexture;
   let textureWidth = 1;
   let textureHeight = 1;
@@ -554,7 +409,6 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     1 * 4 + // deltaTime
     3 * 4 + // padding
     4 * 4 + // seed
-    4 * 4 + //temp+perci
     0;
   const simulationUBOBuffer = device.createBuffer({
     size: simulationUBOBufferSize,
@@ -586,29 +440,14 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       {
         binding: 1,
         resource: {
-          buffer: cellBuffer,
+          buffer: particlesBuffer,
           offset: 0,
-          size: terrainCells.Size * cellInstanceByteSize,
+          size: numParticles * particleInstanceByteSize,
         },
       },
       {
         binding: 2,
-        resource: cubeTexture.createView(),
-      },
-      {
-        binding: 3,
-        //resource: cubeTexture.createView(),
-        resource: writableTexture.createView({
-            format: 'rgba32float',
-            dimension: '2d',
-          }
-        ),
-      },
-      {
-        binding: 4,
-        resource: {
-          buffer: maxBuffer,
-        }
+        resource: texture.createView(),
       },
     ],
   });
@@ -618,15 +457,15 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   const view = mat4.create();
   const mvp = mat4.create();
 
+
+  const modelViewProjectionMatrix = mat4.create();
+
   const projectionMatrix = mat4.perspective(
     (2 * Math.PI) / 5,
     aspect,
     1,
-    5000.0
+    100.0 //2000.0
   );
-
-  const modelViewProjectionMatrix = mat4.create();
-
   function getModelViewProjectionMatrix(deltaTime: number) {
     const viewMatrix = camera.update(deltaTime, inputHandler());
     mat4.multiply(projectionMatrix, viewMatrix, modelViewProjectionMatrix);
@@ -634,57 +473,13 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   }
 
   let lastFrameMS = Date.now();
-  let lastDayMS = Date.now()
-  let weatherData = getWeatherData(lastFrameMS, 2, 2);
 
   function frame() {
     // Sample is no longer the active page.
-    // console.log("loading");
     if (!pageState.active) return;
     const now = Date.now();
     const deltaTime = (now - lastFrameMS) / 1000;
-    const deltaTimeFull = now - lastDayMS;
     lastFrameMS = now;
-    if (statsParams.showStats)
-    {
-      if (statsParams.showMemoryUsage)
-      {
-        stats.showPanel(2);
-      }
-      else
-      {
-        stats.showPanel(0);
-      }
-    }
-    else
-    {
-      stats.showPanel(3)
-    }
-
-
-    //TODO: how to bind weather Data per frame
-    if (getNumDaysPassed(deltaTimeFull) >= 1 && !weatherParams.useGuiWeather)
-    {
-      console.log("day of year: " + getDayOfYear(now));
-      lastDayMS = now;
-      weatherData = getWeatherData(now, mesh.width, mesh.height);
-      console.log("weatherData: " + weatherData.temperature[0] + " : " + weatherData.precipitation[0]);
-
-    }
-
-    if (now % 1000 > 998)
-    {
-      // weatherData = getWeatherData(now, mesh.width, mesh.height);
-      
-      // for (let i = 0; i < 10; i++) {
-      //   console.log("now: " + now);
-      //   console.log("day of year: " + getDayOfYear(now));
-      //   console.log("weather for cell: " + (i * 20));
-        // console.log("temperature: " + weatherData.temperature[i * 20]);
-        // console.log("temperature: " + weatherData.temperature[20]);
-      //   console.log("precipitation: " + weatherData.precipitation[i * 20]);
-      // }
-    }
 
     device.queue.writeBuffer(
       simulationUBOBuffer,
@@ -698,51 +493,37 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         Math.random() * 100, // seed.xy
         1 + Math.random(),
         1 + Math.random(), // seed.zw
-        weatherParams.useGuiWeather ? weatherParams.guiTemperature : weatherData.temperature[0], //TODO: bind weather Data temperature per frame
-        weatherParams.useGuiWeather ? weatherParams.guiPrecipitation : weatherData.precipitation[0], //TODO: bind weather Data percipitation per frame
-        //getHourOfDay(now),//padding
-        //getDayOfYear(now),
-        0.0,
-        0.0,
       ])
     );
-    // if (now % 1000 > 998)
-    // {
-    //   if (weatherParams.useGuiWeather)
-    //   {
-    //     console.log("use gui weather");
-    //     computeSnowCPU(terrainCells, weatherParams.guiTemperature, weatherParams.guiPrecipitation)
-    //   }
-    //   else
-    //   {
-    //     computeSnowCPU(terrainCells);
-    //   }
-    // }
 
     mat4.identity(view);
     mat4.translate(view, vec3.fromValues(0, 0, -3), view);
     mat4.rotateX(view, Math.PI * -0.2, view);
     mat4.multiply(projection, view, mvp);
-
+    
     const cameraViewProj = getModelViewProjectionMatrix(deltaTime);
-    device.queue.writeBuffer(
+    //console.log(cameraViewProj.byteLength);
+    //console.log(cameraViewProj.buffer);
+    // // prettier-ignore
+    // Camera code
+    /*device.queue.writeBuffer(
       uniformBuffer,
       0,
       cameraViewProj.buffer,
       cameraViewProj.byteOffset,
       cameraViewProj.byteLength
-    )
+    )*/
 
-    // prettier-ignore
     device.queue.writeBuffer(
       uniformBuffer,
+      // 0,
       64,
       new Float32Array([
         // modelViewProjectionMatrix
-        // mvp[0], mvp[1], mvp[2], mvp[3],
-        // mvp[4], mvp[5], mvp[6], mvp[7],
-        // mvp[8], mvp[9], mvp[10], mvp[11],
-        // mvp[12], mvp[13], mvp[14], mvp[15],
+        mvp[0], mvp[1], mvp[2], mvp[3],
+        mvp[4], mvp[5], mvp[6], mvp[7],
+        mvp[8], mvp[9], mvp[10], mvp[11],
+        mvp[12], mvp[13], mvp[14], mvp[15],
 
         view[0], view[4], view[8], // right
 
@@ -753,31 +534,16 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         0, // padding
       ])
     );
-
-    let maxArray = new Uint32Array([0,0,0,0]);
-
-    device.queue.writeBuffer(
-      maxBuffer,
-      0,
-      maxArray.buffer,
-      maxArray.byteOffset,
-      maxArray.byteLength
-    );
-    
     const swapChainTexture = context.getCurrentTexture();
     // prettier-ignore
     renderPassDescriptor.colorAttachments[0].view = swapChainTexture.createView();
-    
-    if (statsParams.showStats) {
-      stats.begin();
-    }
 
     const commandEncoder = device.createCommandEncoder();
     {
       const passEncoder = commandEncoder.beginComputePass();
       passEncoder.setPipeline(computePipeline);
       passEncoder.setBindGroup(0, computeBindGroup);
-      passEncoder.dispatchWorkgroups(Math.ceil((mesh.width-1) / 8),Math.ceil((mesh.height-1) / 8));
+      passEncoder.dispatchWorkgroups(Math.ceil(numParticles / 64));
       passEncoder.end();
     }
     {
@@ -793,9 +559,6 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     device.queue.submit([commandEncoder.finish()]);
 
     requestAnimationFrame(frame);
-    if (statsParams.showStats) {
-      stats.end()
-    }
   }
   requestAnimationFrame(frame);
 };
@@ -806,7 +569,6 @@ const Particles: () => JSX.Element = () =>
     description:
       'This example demonstrates rendering of particles simulated with compute shaders.',
     gui: true,
-    stats: true,
     init,
     sources: [
       {

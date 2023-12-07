@@ -110,7 +110,7 @@ export class WASDCamera extends CameraBase implements Camera {
   private readonly velocity_ = vec3.create();
 
   // Speed multiplier for camera movement
-  movementSpeed = 10;
+  movementSpeed = 150;
 
   // Speed multiplier for camera rotation
   rotationSpeed = 1;
