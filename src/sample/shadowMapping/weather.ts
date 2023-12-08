@@ -1,5 +1,5 @@
-import { createNoise2D } from 'simplex-noise'
-import { timeToHours, getDayOfYear } from '../../meshes/utils'
+import { createNoise2D } from 'simplex-noise';
+import { timeToHours, getDayOfYear } from '../../meshes/utils';
 // import alea from 'alea'
 
 const probabilities = {
@@ -10,7 +10,7 @@ const probabilities = {
 
 // const resolution = 10;
 const noise = createNoise2D();
-var Alea = require('alea')
+let Alea = require('alea');
 
 let currTime = -1;
 let currState = '';
@@ -20,7 +20,7 @@ const hour = day * 24;
 
 // export async function getWeatherData(time: number, width: number, height: number) {
 export const getWeatherData = (time: number, width: number, height: number) => {
-  let deltaTime = (currTime === -1) ? hour : (time - currTime);
+  const deltaTime = (currTime === -1) ? hour : (time - currTime);
   currTime = time;
   if (currState === '') {
     var state = Math.random() < probabilities.p_i_w ? 'wet' : 'dry';
