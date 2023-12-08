@@ -18,8 +18,6 @@ fn main(input : FragmentInput) -> @location(0) vec4<f32> {
     // Sample the texture color
     let textureColor = textureSample(myTexture, mySampler, input.uv);
 
-    // Lighting calculations (if any) go here...
-
     // Combine the texture color with lighting effects to get the original color
     let originalColor = textureColor.rgb; // Placeholder for combined color calculation
 
