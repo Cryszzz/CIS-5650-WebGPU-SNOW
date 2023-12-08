@@ -682,9 +682,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
-  Object.keys(simulationParams).forEach((k) => {
+  /*Object.keys(simulationParams).forEach((k) => {
     gui.add(simulationParams, k);
-  });
+  });*/
 
   const computePipeline = device.createComputePipeline({
     layout: 'auto',
