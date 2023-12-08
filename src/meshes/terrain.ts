@@ -26,7 +26,7 @@ async function generateTerrainMesh() {
     //const height = 160;
     //const width = 190;
     const terrainSize = 1000;
-    const gridSpacing = 1;
+    const gridSpacing = 3;
     // const gridSpacing = 4;
     const skip=10;
     const uvrepeat=1;
