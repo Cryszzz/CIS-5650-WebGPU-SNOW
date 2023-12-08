@@ -176,14 +176,17 @@ fn vs_main(in : VertexInput,
   // Calculate displacement from snow
   var fragDim=vec2<i32>(textureDimensions(fragtexture).xy);
   var fragCoord : vec2<i32>=vec2<i32>(0,0);
-  fragCoord.x=i32(f32(fragDim.x)*f32((coord.x / (textDim.x - 1)) * fragDim.x)); // TODO: What should be uv for the overall grid?
-  fragCoord.y=i32(f32(fragDim.y)*f32((coord.y / (textDim.y - 1)) * fragDim.y)); // TODO: What should be uv for the overall grid? 
-  var testcolor = textureLoad(fragtexture, fragCoord.xy, 0); 
-  var testColorMax = clamp(testcolor * 100 / (f32(maxSnow[0])), vec4(0.0), vec4(75)); // change these values so that they can be multiplied by heightMul
+  fragCoord.x=i32(f32(fragDim.x)*f32(coord.x / textDim.x)); // TODO: What should be uv for the overall grid?
+  fragCoord.y=i32(f32(fragDim.y)*f32(coord.y / textDim.y)); // TODO: What should be uv for the overall grid? 
+  // var testcolor = textureLoad(fragtexture, fragCoord.xy, 0); 
+  // var testColorMax = clamp(testcolor * 100 / (f32(maxSnow[0])), vec4(0.0), vec4(75)); // change these values so that they can be multiplied by heightMul
+  var testColorMax = clamp(vec4<f32>(f32((coord.x / (textDim.x)) * fragDim.x), f32((coord.y / (textDim.y)) * fragDim.y), 0.0, 1.0), vec4<f32>(0.0), vec4<f32>(1.0));
 
   var height:f32=textureLoad(heighttexture,coord,0).x;
-  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,(height + testColorMax.x)*heightMul,gridPos.y, 1.0);
-  out.position=vec3<f32>(gridPos.x,(height+ testColorMax.x)*heightMul,gridPos.y);
+  // out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,(height + testColorMax.x)*heightMul,gridPos.y, 1.0);
+  // out.position=vec3<f32>(gridPos.x,(height+ testColorMax.x)*heightMul,gridPos.y);
+  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,f32(f32(coord.x) / f32(textDim.x)) * 10,gridPos.y, 1.0);
+  out.position = vec3<f32>(gridPos.x,f32(f32(coord.x) / f32(textDim.x)) * 1000,gridPos.y);
   out.normal =normal;
   out.uv = vec2<f32>(f32(coord.x)/f32(textDim.x),f32(coord.y)/f32(textDim.y));
   return out;

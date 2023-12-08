@@ -7,7 +7,7 @@ var imgText: number[] = [0, 0];
 const EPSILON = 0.00001;
 
 async function loadAndUseHeightData() {
-    const url = '../assets/img/file/everest.tif';
+    const url = '../assets/img/file/k2-h.tif';
     // const url = '../assets/img/file/test2.tif';
     const heightData = await getHeightData(url);
     imgText[0] = numberArray[0];
@@ -27,7 +27,7 @@ async function generateTerrainMesh() {
     //const width = 190;
     const gridSpacing = 1;
     // const gridSpacing = 4;
-    const skip=2;
+    const skip=32;
     const uvrepeat=1;
     const verticesPerRow = Math.floor((Math.floor(height/skip)-1)/2)*2+1;
     const verticesPerColumn = Math.floor((Math.floor(width/skip)-1)/2)*2+1;
@@ -47,7 +47,7 @@ async function generateTerrainMesh() {
           positions.push([(x - width / 2)*gridSpacing, data / 100, (z - height / 2)*gridSpacing]);
           //positions.push([(x - width / 2)*gridSpacing, 0, (z - height / 2)*gridSpacing]);
           // TODO: I think there may still be a bug with UV
-          uvs.push([x/(verticesPerRow*skip)*uvrepeat,1.0-z/(verticesPerRow*skip)*uvrepeat]);
+          // uvs.push([x/(verticesPerRow*skip)*uvrepeat,1.0-z/(verticesPerRow*skip)*uvrepeat]);
           
         }
     }
@@ -66,29 +66,29 @@ async function generateTerrainMesh() {
     //   }
     // }
 
-    const triangles: [number, number, number][] = [];
-    for (let x = 0; x < verticesPerColumn - 1; x++) {
-        for (let z = 0; z < verticesPerRow - 1; z++) {
-            let topLeft = x * verticesPerRow + z;
-            let topRight = topLeft + 1;
-            let bottomLeft = topLeft + verticesPerRow;
-            let bottomRight = bottomLeft + 1;
+    // const triangles: [number, number, number][] = [];
+    // for (let x = 0; x < verticesPerColumn - 1; x++) {
+    //     for (let z = 0; z < verticesPerRow - 1; z++) {
+    //         let topLeft = x * verticesPerRow + z;
+    //         let topRight = topLeft + 1;
+    //         let bottomLeft = topLeft + verticesPerRow;
+    //         let bottomRight = bottomLeft + 1;
 
-            triangles.push([topLeft, topRight, bottomLeft]);
-            triangles.push([topRight, bottomRight, bottomLeft]);
-        }
-    }
+    //         triangles.push([topLeft, topRight, bottomLeft]);
+    //         triangles.push([topRight, bottomRight, bottomLeft]);
+    //     }
+    // }
 
     const mesh = {
         positions: positions as [number, number, number][],
-        triangles: triangles as [number, number, number][],
-        normals: [] as [number, number, number][],
-        uvs: uvs as [number, number][],
+        // triangles: triangles as [number, number, number][],
+        // normals: [] as [number, number, number][],
+        // uvs: uvs as [number, number][],
         height: verticesPerRow as number,
         width: verticesPerColumn as number,
     };
 
-    mesh.normals = computeSurfaceNormals(positions, triangles);
+    // mesh.normals = computeSurfaceNormals(positions, triangles);
 
     // mesh.uvs = computeProjectedPlaneUVs(positions);
 

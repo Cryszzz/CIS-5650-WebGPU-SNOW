@@ -374,6 +374,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     const url = '../assets/img/file/k2-h.tif';
     const heightData = await getHeightData(url);
     
+    console.log("heightdata test");
+    console.log("heightData: " + heightData[0]);
+
     heightTexture = device.createTexture({
       size: [numberArray[0], numberArray[1],1],
       format: "r32float",
