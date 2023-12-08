@@ -10,11 +10,13 @@ struct Uniforms {
 
 struct VertexInput {
     @location(0) position : vec4<f32>;
+    @location(1) uv : vec2<f32>; // Add UV coordinates
 };
 
 struct VertexOutput {
     @builtin(position) clipPosition : vec4<f32>;
     @location(0) fragPos : vec3<f32>; // Position in camera space
+    @location(1) fragUV : vec2<f32>; // Pass UV coordinates to fragment shader
 };
 
 @stage(vertex)
@@ -32,6 +34,7 @@ fn main(input : VertexInput) -> VertexOutput {
 
     // Transform the vertex position to clip space
     output.clipPosition = uniforms.projectionMatrix * cameraSpacePos;
-
+    output.fragUV = input.uv; // Set the UV coordinates
     return output;
 }
+
