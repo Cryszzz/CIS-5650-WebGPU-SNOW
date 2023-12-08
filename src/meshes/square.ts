@@ -22,7 +22,7 @@ async function generateSquareMesh() {
         [1.0],[1.0],[1.0],[0.0],[0.0],[0.0]];
     const mesh = {
         positions: positions as [number, number, number][],
-        triangles: triangles as [number, number, number][],
+        //triangles: triangles as [number, number, number][],
         normals: normals as [number][],
         uvs: uvs as [number, number][],
     };

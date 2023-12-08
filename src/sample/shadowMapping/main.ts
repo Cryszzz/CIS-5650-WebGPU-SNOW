@@ -17,7 +17,7 @@ import { computeSnowCPU } from './snowCompute';
 import { max } from 'wgpu-matrix/dist/2.x/vec2-impl';
 import { getHeightData, numberArray } from '../../meshes/geotiff-utils';
 
-const numParticles = 50000;
+const numParticles = 0;
 const particlePositionOffset = 0;
 const particleColorOffset = 4 * 4;
 const particleInstanceByteSize =
@@ -233,10 +233,10 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     // }
   
   
-  const indexCount = smesh.triangles.length * 3;
+  /*const indexCount = smesh.triangles.length * 3;
   console.log("buffer size"+indexCount * Uint16Array.BYTES_PER_ELEMENT);
-  console.log("mesh.triangles.length: " + smesh.triangles.length)
-  const indexBuffer = device.createBuffer({
+  console.log("mesh.triangles.length: " + smesh.triangles.length)*/
+  /*const indexBuffer = device.createBuffer({
     label: "index buffer",
     size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.INDEX,
@@ -248,7 +248,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       mapping.set(smesh.triangles[i], 3 * i);
     }
     indexBuffer.unmap();
-  }
+  }*/
   const vertexBuffer = device.createBuffer({
     label: "vertex buffer",
     size: smesh.positions.length * 6 * Float32Array.BYTES_PER_ELEMENT,
@@ -922,7 +922,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       passEncoder.setBindGroup(0, uniformBindGroup);
       passEncoder.setVertexBuffer(0, vertexBuffer);
       //passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-      passEncoder.draw(indexCount,(heightTexture.width-1)*(heightTexture.height-1));//(heightTexture.width-1)*(heightTexture.height-1)
+      passEncoder.draw(6,(heightTexture.width-1)*(heightTexture.height-1));//(heightTexture.width-1)*(heightTexture.height-1)
       // passEncoder.setIndexBuffer(indexBuffer, 'uint16');
       // passEncoder.drawIndexed(indexCount);
       renderSkybox(device, canvas, skyboxViewMatrix, projectionMatrix, skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup,passEncoder,cameraViewProj);
