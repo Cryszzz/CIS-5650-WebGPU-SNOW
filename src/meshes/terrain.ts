@@ -19,38 +19,29 @@ async function loadAndUseHeightData() {
 
 async function generateTerrainMesh() {
     const heightData = await loadAndUseHeightData();
-    const height = imgText[1];
-    const width = imgText[0];
+    const width = imgText[0]; // TODO: may have to swap this
+    const height = imgText[1]; // TODO: may have to swap this
     const gridSpacing = 1;
-    const skip=4;
-    const uvrepeat=1;
-    const verticesPerRow = Math.floor(height/skip) - 1; // height = verticesPerRow
-    const verticesPerColumn = Math.floor(width/skip) - 1; //width = verticesPerColumn
+    const skip=8;
+    const verticesPerRow = Math.floor(width/skip); // height = verticesPerRow
+    const verticesPerColumn = Math.floor(height/skip); //width = verticesPerColumn
     console.log("verticesPerRow"+verticesPerRow );
     console.log("verticesPerColumn"+verticesPerColumn );
 
     const positions: [number, number, number][] = [];
-    const uvs: [number, number][] = [];
-    for (let x = 0; x <verticesPerColumn*skip; x+=skip) {
-        for (let z = 0; z <verticesPerRow*skip; z+=skip) {
-          // console.log(`x: ${x}, z: ${z}, dataIndex: ${dataIndex}, heightData[dataIndex]: ${heightData[dataIndex]}`);
-          const data=heightData[x*width+z];
-          positions.push([(x - width / 2)*gridSpacing, data/100, (z - height / 2)*gridSpacing]);
+    for (let z = 0; z <verticesPerColumn*skip; z+=skip) {
+        for (let x = 0; x <verticesPerRow*skip; x+=skip) {
+          // console.log(`x: ${x}, z: ${z}, heightData[z*width+x]: ${heightData[z*width+x]}`);
+          const data=heightData[z*width+x];
+          positions.push([(x - width / 2)*gridSpacing, data, (z - height / 2)*gridSpacing]);
         }
     }
 
     const mesh = {
         positions: positions as [number, number, number][],
-        // triangles: triangles as [number, number, number][],
-        // normals: [] as [number, number, number][],
-        // uvs: uvs as [number, number][],
-        height: verticesPerRow as number,
-        width: verticesPerColumn as number,
+        height: verticesPerColumn as number,
+        width: verticesPerRow as number,
     };
-
-    // mesh.normals = computeSurfaceNormals(positions, triangles);
-
-    // mesh.uvs = computeProjectedPlaneUVs(positions);
 
     return mesh;
 }
@@ -59,18 +50,7 @@ async function generateTerrainMesh() {
 export async function getTerrainMesh() {
     return await generateTerrainMesh();
 }
-//     const positions: [number, number, number][]= [[1.0,1.0,0.0],[1.0,-1.0,0.0],[-1.0,-1.0,0.0],[-1.0,1.0,0.0]];
-//     const triangles: [number, number, number][]= [[0,1,2],[0,2,3]];
-//     const mesh = {
-//         positions: positions as [number, number, number][],
-//         triangles: triangles as [number, number, number][],
-//         normals: [] as [number, number, number][],
-//         uvs: [] as [number, number][],
-//     };
-//     mesh.normals = computeSurfaceNormals(positions, triangles);
-//     mesh.uvs = computeProjectedPlaneUVs(positions);
-//     return mesh;
-// }
+
 const normalizeAngle360 = (A: number) => {
     A = A % 360;
     return A < 0 ? A + (Math.PI*2) : A;
@@ -82,15 +62,15 @@ export async function getTerrainCells(mesh) {
 
 function getCellIndex(x : number, z : number, cell_width_x : number, cell_height_z)
 {
-  let index = x * cell_height_z + z;
-  let value = (index >= 0 && index < cell_width_x * cell_height_z) ? index : -1;
-  return value;
+  let index = z * cell_width_x + x;
+  return (index >= 0 && index < (cell_width_x * cell_height_z) && x < cell_width_x && x > 0) ? index : -1;
+ 
 }
 
 async function generateTerrainCells(mesh) {
   let width = mesh.width;
   let height = mesh.height; 
-  let grid_size = mesh.positions.length;
+  let grid_size = (width - 1) * (height - 1);
   console.log("grid_size " + grid_size);
   console.log("side_width " + (width-1));
   console.log("side_height " + (height-1));
@@ -133,14 +113,14 @@ async function generateTerrainCells(mesh) {
 
   let initialMaxSnow = 0.0;
   // let cellIndex = 0;
-
-  for (let x = 0; x < width - 1; x++) {
-    for (let z = 0; z < height - 1; z++) {
-      let cellIndex = x * (height - 1) + z;
-      cells.P0[cellIndex] = mesh.positions[x * height + z];
-      cells.P1[cellIndex] = mesh.positions[x * height + z + 1];
-      cells.P2[cellIndex] = mesh.positions[(x + 1) * height + z];
-      cells.P3[cellIndex] = mesh.positions[(x + 1) * height + z + 1];
+  
+  for (let z = 0; z < height - 1; z++) {
+    for (let x = 0; x < width - 1; x++) {
+      let cellIndex = z * (width - 1) + x;
+      cells.P0[cellIndex] = mesh.positions[z * (width) + x];
+      cells.P1[cellIndex] = mesh.positions[z * (width) + x + 1];
+      cells.P2[cellIndex] = mesh.positions[(z + 1) * (width) + x];
+      cells.P3[cellIndex] = mesh.positions[(z + 1) * (width) + x + 1];
 
       let P0 = vec3.fromValues(cells.P0[cellIndex][0], cells.P0[cellIndex][1], cells.P0[cellIndex][2]);
       let P1 = vec3.fromValues(cells.P1[cellIndex][0], cells.P1[cellIndex][1], cells.P1[cellIndex][2]);
@@ -169,7 +149,7 @@ async function generateTerrainCells(mesh) {
       cells.Latitude[cellIndex] = degreesToRadians(latitude);
 
       let normalProjXZ = vec2.fromValues(normal[0], normal[2]);
-      let north2D = vec2.fromValues(1, 0);
+      let north2D = vec2.fromValues(0, -1);
       let dot = vec2.dot(normalProjXZ, north2D);
       let det = normalProjXZ[0] * north2D[1] - normalProjXZ[1] * north2D[0];
       cells.Aspect[cellIndex] = Math.atan2(det, dot);
@@ -180,7 +160,7 @@ async function generateTerrainCells(mesh) {
       if (cells.Altitude[cellIndex] / 100.0 > 3300.0) {
         let areaSquareMeters = cells.Area[cellIndex] / (100 * 100);
         let we = (2.5 + cells.Altitude[cellIndex] / 100 * 0.001) * areaSquareMeters;
-        console.log("initial swe: " + we);
+        // console.log("initial swe: " + we);
         snowWaterEquivalent = we;
       // TODO: bind max snow buffer to this number
         initialMaxSnow = Math.max(snowWaterEquivalent / areaSquareMeters, initialMaxSnow);
@@ -199,10 +179,10 @@ async function generateTerrainCells(mesh) {
 
   let cell_width_x = width - 1;
   let cell_height_z = height - 1;
-
-  for (let x = 0; x < cell_width_x; x++) {
-    for (let z = 0; z < cell_height_z; z++) {
-      let index = x * cell_height_z + z;
+  
+  for (let z = 0; z < cell_height_z; z++) {
+    for (let x = 0; x < cell_width_x; x++) {
+      let index = z * cell_width_x + x;
       let neighborsIndices = new Array(8);
 
       neighborsIndices[0] = getCellIndex(x, z - 1, cell_width_x, cell_height_z);						// N
@@ -215,10 +195,23 @@ async function generateTerrainCells(mesh) {
       neighborsIndices[6] = getCellIndex(x - 1, z, cell_width_x, cell_height_z);						// W
       neighborsIndices[7] = getCellIndex(x - 1, z - 1, cell_width_x, cell_height_z);					// NW
 
+      // if (x > 20 && x < 30 && z > 20 && z < 30) {
+      //   console.log("index: ", index);
+      //   console.log("neighborsIndices: ", neighborsIndices);
+      //   console.log("0: ", neighborsIndices[0]);
+      //   console.log("1: ", neighborsIndices[1]);
+      //   console.log("2: ", neighborsIndices[2]);
+      //   console.log("3: ", neighborsIndices[3]);
+      //   console.log("4: ", neighborsIndices[4]);
+      //   console.log("5: ", neighborsIndices[5]);
+      //   console.log("6: ", neighborsIndices[6]);
+      //   console.log("7: ", neighborsIndices[7]);
+      // }
       if (neighborsIndices[0] == -1 || neighborsIndices[1] == -1 || neighborsIndices[2] == -1 || neighborsIndices[3] == -1
         || neighborsIndices[4] == -1 || neighborsIndices[5] == -1 || neighborsIndices[6] == -1 || neighborsIndices[7] == -1)
         {
-          cells.Curvature[index] = 0.0005;
+          console.log("index: " + index + " 5e-7");
+          cells.Curvature[index] = -0.0005;
           continue;
         }
 
@@ -232,12 +225,23 @@ async function generateTerrainCells(mesh) {
       let Z8 = cells.Altitude[neighborsIndices[4]] / 100; // S
       let Z9 = cells.Altitude[neighborsIndices[5]] / 100; // SE
 
-      let L = cells.P2[index][0] - cells.P0[index][0]
+      // console.log("cells.P1[index][0], cells.P0[index][0]: " + cells.P1[index][0] + ", " + cells.P0[index][0]);
+      let L = cells.P1[index][0] - cells.P0[index][0]
+
+      // console.log("L: ", L);
+      // console.log("Z2: ", Z2);
+      // console.log("Z4: ", Z4);
+      // console.log("Z5: ", Z5);
+      // console.log("Z6: ", Z6);
+      // console.log("Z8: ", Z8);
 
       let D = ((Z4 + Z6) / 2 - Z5) / (L * L);
       let E = ((Z2 + Z8) / 2 - Z5) / (L * L);
       cells.Curvature[index] = 2 * (D + E);
-      // console.log("curvature: ", cells.Curvature[index]);
+      // if (x > 20 && x < 30 && z > 20 && z < 30) {
+      //   console.log("curvature: ", cells.Curvature[index]);
+      // }
+
     }
   }
   return cells;

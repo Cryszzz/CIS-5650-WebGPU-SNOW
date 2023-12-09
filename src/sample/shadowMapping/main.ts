@@ -116,8 +116,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   
   const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
                                   9 * mesh.width + 16, 9 * mesh.width + 17, 9 * mesh.width + 18,
-                                  11 * mesh.height + 6, 11 * mesh.height + 7, 9 * mesh.height + 15,
-                                  9 * mesh.height + 16, 9 * mesh.height + 17, 9 * mesh.height + 18,]
+                                  110 * mesh.height + 60, 11 * mesh.height + 7, 9 * mesh.height + 15,
+                                  9 * mesh.height + 16, 9 * mesh.height + 17, 9 * mesh.height + 18,
+                                  30851, 30852, 30853]
 
   // for (let i = 0; i < 580; i += 20) {
   for (let i = 0; i < terrainCellsDebugIndex.length; i++) {
@@ -137,7 +138,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     // console.log("InterpolatedSWE: " + i + " " + terrainCells.InterpolatedSWE[i]);
     // console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
     // console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
-    // console.log("Curvature: " + i + " " + terrainCells.Curvature[i]);
+    console.log("Curvature: " + " " + terrainCells.Curvature[currIndex]);
   // }
   }
   const cellBuffer = device.createBuffer({
@@ -169,13 +170,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     const maxBuffer = device.createBuffer({
       size: 4 * 4,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-      // mappedAtCreation: true,
     });
-    // {
-    //   const mapping = new Int32Array(maxBuffer.getMappedRange());
-    //   mapping.set([0,0,0,0]);
-    //   maxBuffer.unmap();
-    // }
   
   
   const indexCount = smesh.triangles.length * 3;
@@ -847,7 +842,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       const passEncoder = commandEncoder.beginComputePass();
       passEncoder.setPipeline(computePipeline);
       passEncoder.setBindGroup(0, computeBindGroup);
-      passEncoder.dispatchWorkgroups(Math.ceil((mesh.height-1) / 8),Math.ceil((mesh.width-1) / 8));
+      passEncoder.dispatchWorkgroups(Math.ceil((mesh.width-1) / 8),Math.ceil((mesh.height-1) / 8));
       passEncoder.end();
     }
     {

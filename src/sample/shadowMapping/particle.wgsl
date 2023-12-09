@@ -28,7 +28,7 @@ struct SimulationCSVar {
     DayOfYear: i32,
 };
 
-const SimulationCSVariables: SimulationCSVar = SimulationCSVar(0,0,12,148);
+const SimulationCSVariables: SimulationCSVar = SimulationCSVar(0,0,12,35);
 
 fn init_rand(invocation_id : u32, seed : vec4<f32>) {
   rand_seed = seed.xz;
@@ -172,10 +172,10 @@ fn vs_main(in : VertexInput,
   //let cell = vec2<i32>(i % 2, i / 2);
 
   // Calculate displacement from snow
-  // var fragDim=vec2<i32>(textureDimensions(fragtexture).xy);
-  // var fragCoord : vec2<i32>=vec2<i32>(0,0);
-  // fragCoord.x=i32(f32(coord.x) / f32(textDim.x - 1) * f32(fragDim.x)); // TODO: What should be uv for the overall grid?
-  // fragCoord.y=i32(f32(coord.y) / f32(textDim.y - 1) * f32(fragDim.y)); // TODO: What should be uv for the overall grid? 
+  var fragDim=vec2<i32>(textureDimensions(fragtexture).xy);
+  var fragCoord : vec2<i32>=vec2<i32>(0,0);
+  fragCoord.x=i32(f32(coord.x) / f32(textDim.x) * f32(fragDim.x)); // TODO: What should be uv for the overall grid?
+  fragCoord.y=i32(f32(coord.y) / f32(textDim.y) * f32(fragDim.y)); // TODO: What should be uv for the overall grid? 
 
   // fragCoord.x=i32(in.uv.x); // TODO: What should be uv for the overall grid?
   // fragCoord.y=i32(in.uv.y); // TODO: What should be uv for the overall grid? 
@@ -188,8 +188,8 @@ fn vs_main(in : VertexInput,
   // fragCoord.x = clamp(fragCoord.x, 0, fragDim.x - 1);
   // fragCoord.y = clamp(fragCoord.y, 0, fragDim.y - 1);
 
-  // var testcolor = textureLoad(fragtexture, fragCoord.xy, 0); 
-  // var testColorMax = clamp(testcolor * 1000 / (f32(maxSnow[0])), vec4(0.0), vec4(750.0)); // change these values so that they can be multiplied by heightMul
+  var testcolor = textureLoad(fragtexture, fragCoord.xy, 0); 
+  var testColorMax = clamp(testcolor / (f32(maxSnow[0])), vec4(0.0), vec4(0.750)); // change these values so that they can be multiplied by heightMul
   // var testColorMax = clamp(vec4<f32>(f32((coord.x / (textDim.x)) * fragDim.x), f32((coord.y / (textDim.y)) * fragDim.y), 0.0, 1.0), vec4<f32>(0.0), vec4<f32>(1.0));
   let cellOffset = vec2<f32>(cell-textDim/2)*grid;
   var gridPos:vec2<f32> = (in.position.xz) * (grid/2.0) + cellOffset;
@@ -254,8 +254,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
 
   // this should be maxSnow[0] instead of maxSnow[0] * 0.4, but leaving it here until debugged
   // var testColorMaxFirst = clamp(testcolor / (f32(maxSnow[0]) * 0.35), vec4(0.0), vec4(1.0));
-  var testColorMaxFirst = testcolor / (f32(maxSnow[0]) * 0.35);
-  var testColorMaxScaled =  testColorMaxFirst * 0.7 + 0.27;
+  var testColorMaxFirst = testcolor / (f32(maxSnow[0]) * 0.25);
+  var testColorMaxScaled =  testColorMaxFirst * 0.75 + 0.22;
   var testcolorMax = clamp(testColorMaxScaled, vec4(0.0), vec4(1.0));
   // var out_color = testcolorMax;
   // var out_color = testcolor;
@@ -334,8 +334,8 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     
     var textDim=vec2<i32>(textureDimensions(texture).xy);
     var text2Dim=vec2<i32>(textureDimensions(texture2).xy);
-    var coord : vec2<i32>=vec2<i32>(global_invocation_id.yx);
-    var idx: u32= global_invocation_id.x*textureDimensions(texture2).y+global_invocation_id.y;
+    var coord : vec2<i32>=vec2<i32>(global_invocation_id.xy);
+    var idx: u32= global_invocation_id.y*textureDimensions(texture2).x+global_invocation_id.x;
     //var idx: u32= global_invocation_id.x;
 
     // init_rand(idx, sim_params.seed);
@@ -353,7 +353,7 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     //CRYSTAL: starting from this part, use the same code from that unreal project
     var celldata = data.cells[idx];
     
-    var areaSquareMeters:f32 = celldata.AreaXY * 10; // m^2 Each cell is constant 2000m^2 for now
+    var areaSquareMeters:f32 = celldata.AreaXY * 100; // m^2 Each cell is constant 2000m^2 for now
     // var areaSquareMetersPrecip:f32 = celldata.AreaXY / 1000; // m^2
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
@@ -411,6 +411,7 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             // var r_i_t: f32 =5.0;
             // Melt factor
             // @TODO melt factor test
+            // r_i_t = r_i_t * 0.01;
             var vegetationDensity: f32 = 0.0;
             var k_v: f32 = exp(-4.0 * vegetationDensity); // 1
             var c_m: f32 = SimulationCSConstants.k_m * k_v * r_i_t * (1.0 - celldata.SnowAlbedo) * dayNormalization * areaSquareMeters; // l/m^2/C�/day * day * m^2 = l/m^2 * 1/day * day * m^2 = l/C�
@@ -435,7 +436,7 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
 	  var a3 = 50.0;
 
     // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f);
-    celldata.InterpolatedSWE = max(celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature), 0.0);
+    celldata.InterpolatedSWE = max((celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature)) / areaSquareMeters, 0.0);
     // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent;
     //celldata.Curvature-=0.001;
     data.cells[idx] = celldata;
