@@ -2,12 +2,12 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - master
+      - main
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
-      BASE_PATH: /webgpu-snow-accumulation
+      BASE_PATH: /webgpu-samples
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v2.3.1
