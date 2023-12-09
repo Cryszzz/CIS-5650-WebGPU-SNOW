@@ -925,7 +925,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       passEncoder.draw(6,(heightTexture.width-1)*(heightTexture.height-1));//(heightTexture.width-1)*(heightTexture.height-1)
       // passEncoder.setIndexBuffer(indexBuffer, 'uint16');
       // passEncoder.drawIndexed(indexCount);
-      renderSkybox(device, canvas, skyboxViewMatrix, projectionMatrix, skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup,passEncoder,cameraViewProj);
+      //renderSkybox(device, canvas, skyboxViewMatrix, projectionMatrix, skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup,passEncoder,cameraViewProj);
       passEncoder.end();
     }
     
