@@ -82,14 +82,25 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     showMemoryUsage: false,
   }
 
-  gui.add(cameraParams, 'resetCamera').name("Reset Camera");
-  gui.add(weatherParams, 'guiTemperature', -50.0, 70.0).name("Temperature");
-  let precipController = gui.add(weatherParams, 'guiPrecipitation', 0.0, 2.5).name("Precipitation");
-  gui.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
+  var cameraFolder = gui.addFolder('Camera');
+  cameraFolder.open();
+  cameraFolder.add(cameraParams, 'resetCamera').name("Reset Camera");
+
+  var weatherFolder = gui.addFolder('Weather');
+  weatherFolder.open();
+  weatherFolder.add(weatherParams, 'guiTemperature', -50.0, 70.0).name("Temperature");
+  let precipController = weatherFolder.add(weatherParams, 'guiPrecipitation', 0.0, 2.5).name("Precipitation");
+  weatherFolder.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
   precipController = precipController.step(0.1);
 
-  gui.add(statsParams, 'showStats').name("Show Stats");
-  gui.add(statsParams, 'showMemoryUsage').name("Memory Usage");
+  var statsFolder = gui.addFolder('Stats');
+  statsFolder.open();
+  statsFolder.add(statsParams, 'showStats').name("Show Stats");
+  statsFolder.add(statsParams, 'showMemoryUsage').name("Memory Usage");
+
+  var constantsFolder = gui.addFolder('Constants');
+  constantsFolder.open();
+
 
   const devicePixelRatio = window.devicePixelRatio;
   canvas.width = canvas.clientWidth * devicePixelRatio;
@@ -114,33 +125,33 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   const terrainCells = await getTerrainCells(mesh);
   console.log(terrainCells.Size);
   
-  const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
-                                  9 * mesh.width + 16, 9 * mesh.width + 17, 9 * mesh.width + 18,
-                                  110 * mesh.height + 60, 11 * mesh.height + 7, 9 * mesh.height + 15,
-                                  9 * mesh.height + 16, 9 * mesh.height + 17, 9 * mesh.height + 18,
-                                  30851, 30852, 30853]
+  // const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
+  //                                 9 * mesh.width + 16, 9 * mesh.width + 17, 9 * mesh.width + 18,
+  //                                 110 * mesh.height + 60, 11 * mesh.height + 7, 9 * mesh.height + 15,
+  //                                 9 * mesh.height + 16, 9 * mesh.height + 17, 9 * mesh.height + 18,
+  //                                 30851, 30852, 30853]
 
-  // for (let i = 0; i < 580; i += 20) {
-  for (let i = 0; i < terrainCellsDebugIndex.length; i++) {
-    const currIndex = terrainCellsDebugIndex[i];
-    console.log("Terrain Cell: " + currIndex)
-    console.log("P0: " + " " + terrainCells.P0[currIndex]);
-    console.log("P1: " + " " + terrainCells.P1[currIndex]);
-    console.log("P2: " + " " + terrainCells.P2[currIndex]);
-    console.log("P3: " + " " + terrainCells.P3[currIndex]);
-    console.log("Aspect: " + " " + terrainCells.Aspect[currIndex]);
-    console.log("Inclination: " + " " + terrainCells.Inclination[currIndex]);
-    console.log("Altitude: " + " " + terrainCells.Altitude[currIndex]);
-    // console.log("Latitude: " + i + " " + terrainCells.Latitude[i]);
-    console.log("Area: " + " " + terrainCells.Area[currIndex]);
-    console.log("AreaXZ: " + " " + terrainCells.AreaXZ[currIndex]);
-    // console.log("SnowWaterEquivalent: " + i + " " + terrainCells.SnowWaterEquivalent[i]);
-    // console.log("InterpolatedSWE: " + i + " " + terrainCells.InterpolatedSWE[i]);
-    // console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
-    // console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
-    console.log("Curvature: " + " " + terrainCells.Curvature[currIndex]);
+  // // for (let i = 0; i < 580; i += 20) {
+  // for (let i = 0; i < terrainCellsDebugIndex.length; i++) {
+  //   const currIndex = terrainCellsDebugIndex[i];
+  //   console.log("Terrain Cell: " + currIndex)
+  //   console.log("P0: " + " " + terrainCells.P0[currIndex]);
+  //   console.log("P1: " + " " + terrainCells.P1[currIndex]);
+  //   console.log("P2: " + " " + terrainCells.P2[currIndex]);
+  //   console.log("P3: " + " " + terrainCells.P3[currIndex]);
+  //   console.log("Aspect: " + " " + terrainCells.Aspect[currIndex]);
+  //   console.log("Inclination: " + " " + terrainCells.Inclination[currIndex]);
+  //   console.log("Altitude: " + " " + terrainCells.Altitude[currIndex]);
+  //   // console.log("Latitude: " + i + " " + terrainCells.Latitude[i]);
+  //   console.log("Area: " + " " + terrainCells.Area[currIndex]);
+  //   console.log("AreaXZ: " + " " + terrainCells.AreaXZ[currIndex]);
+  //   // console.log("SnowWaterEquivalent: " + i + " " + terrainCells.SnowWaterEquivalent[i]);
+  //   // console.log("InterpolatedSWE: " + i + " " + terrainCells.InterpolatedSWE[i]);
+  //   // console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
+  //   // console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
+  //   console.log("Curvature: " + " " + terrainCells.Curvature[currIndex]);
+  // // }
   // }
-  }
   const cellBuffer = device.createBuffer({
     size: terrainCells.Size * cellInstanceByteSize,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
@@ -231,38 +242,6 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     },
   ];
 
-  // not needed
-  // const renderPipelineBindGroupLayout = device.createBindGroupLayout({
-  //   entries: [
-  //     {
-  //       binding: 0,
-  //       visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-  //       buffer : {}
-  //     },
-  //     {
-  //       binding: 1,
-  //       visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-  //       texture: {}
-  //     },
-  //     {
-  //       binding: 2,
-  //       visibility: GPUShaderStage.FRAGMENT,
-  //       texture: {}
-  //     },
-  //     {
-  //       binding: 3,
-  //       visibility: GPUShaderStage.FRAGMENT,
-  //       buffer: {}
-  //     },
-  //   ],
-  // });
-
-  // const renderPipelineLayout = device.createPipelineLayout({
-  //   bindGroupLayouts: [
-  //     renderPipelineBindGroupLayout, // @group(0)
-  //   ]
-  // });
-
   const renderPipeline = device.createRenderPipeline({
     layout: 'auto',
     vertex: {
@@ -285,7 +264,6 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     },
     primitive: {
       topology: 'triangle-list',
-      //cullMode: 'back',
     },
 
     depthStencil: {
@@ -469,143 +447,6 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   ];
   new Float32Array(quadVertexBuffer.getMappedRange()).set(vertexData);
   quadVertexBuffer.unmap();
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Texture
-  //////////////////////////////////////////////////////////////////////////////
-  
-  
-  let texture: GPUTexture;
-  let textureWidth = 1;
-  let textureHeight = 1;
-  let numMipLevels = 1;
-  {
-    const response = await fetch('../assets/img/webgpu.png');
-    const imageBitmap = await createImageBitmap(await response.blob());
-
-    // Calculate number of mip levels required to generate the probability map
-    while (
-      textureWidth < imageBitmap.width ||
-      textureHeight < imageBitmap.height
-    ) {
-      textureWidth *= 2;
-      textureHeight *= 2;
-      numMipLevels++;
-    }
-    texture = device.createTexture({
-      size: [imageBitmap.width, imageBitmap.height, 1],
-      mipLevelCount: numMipLevels,
-      format: 'rgba8unorm',
-      usage:
-        GPUTextureUsage.TEXTURE_BINDING |
-        GPUTextureUsage.STORAGE_BINDING |
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-    device.queue.copyExternalImageToTexture(
-      { source: imageBitmap },
-      { texture: texture },
-      [imageBitmap.width, imageBitmap.height]
-    );
-  }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Probability map generation
-  // The 0'th mip level of texture holds the color data and spawn-probability in
-  // the alpha channel. The mip levels 1..N are generated to hold spawn
-  // probabilities up to the top 1x1 mip level.
-  //////////////////////////////////////////////////////////////////////////////
-  {
-    const probabilityMapImportLevelPipeline = device.createComputePipeline({
-      layout: 'auto',
-      compute: {
-        module: device.createShaderModule({ code: probabilityMapWGSL }),
-        entryPoint: 'import_level',
-      },
-    });
-    const probabilityMapExportLevelPipeline = device.createComputePipeline({
-      layout: 'auto',
-      compute: {
-        module: device.createShaderModule({ code: probabilityMapWGSL }),
-        entryPoint: 'export_level',
-      },
-    });
-
-    const probabilityMapUBOBufferSize =
-      1 * 4 + // stride
-      3 * 4 + // padding
-      0;
-    const probabilityMapUBOBuffer = device.createBuffer({
-      size: probabilityMapUBOBufferSize,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-    const buffer_a = device.createBuffer({
-      size: textureWidth * textureHeight * 4,
-      usage: GPUBufferUsage.STORAGE,
-    });
-    const buffer_b = device.createBuffer({
-      size: textureWidth * textureHeight * 4,
-      usage: GPUBufferUsage.STORAGE,
-    });
-    device.queue.writeBuffer(
-      probabilityMapUBOBuffer,
-      0,
-      new Int32Array([textureWidth])
-    );
-    const commandEncoder = device.createCommandEncoder();
-    for (let level = 0; level < numMipLevels; level++) {
-      const levelWidth = textureWidth >> level;
-      const levelHeight = textureHeight >> level;
-      const pipeline =
-        level == 0
-          ? probabilityMapImportLevelPipeline.getBindGroupLayout(0)
-          : probabilityMapExportLevelPipeline.getBindGroupLayout(0);
-      const probabilityMapBindGroup = device.createBindGroup({
-        layout: pipeline,
-        entries: [
-          {
-            // ubo
-            binding: 0,
-            resource: { buffer: probabilityMapUBOBuffer },
-          },
-          {
-            // buf_in
-            binding: 1,
-            resource: { buffer: level & 1 ? buffer_a : buffer_b },
-          },
-          {
-            // buf_out
-            binding: 2,
-            resource: { buffer: level & 1 ? buffer_b : buffer_a },
-          },
-          {
-            // tex_in / tex_out
-            binding: 3,
-            resource: texture.createView({
-              format: 'rgba8unorm',
-              dimension: '2d',
-              baseMipLevel: level,
-              mipLevelCount: 1,
-            }),
-          },
-        ],
-      });
-      if (level == 0) {
-        const passEncoder = commandEncoder.beginComputePass();
-        passEncoder.setPipeline(probabilityMapImportLevelPipeline);
-        passEncoder.setBindGroup(0, probabilityMapBindGroup);
-        passEncoder.dispatchWorkgroups(Math.ceil(levelWidth / 64), levelHeight);
-        passEncoder.end();
-      } else {
-        const passEncoder = commandEncoder.beginComputePass();
-        passEncoder.setPipeline(probabilityMapExportLevelPipeline);
-        passEncoder.setBindGroup(0, probabilityMapBindGroup);
-        passEncoder.dispatchWorkgroups(Math.ceil(levelWidth / 64), levelHeight);
-        passEncoder.end();
-      }
-    }
-    device.queue.submit([commandEncoder.finish()]);
-  }
 
   //////////////////////////////////////////////////////////////////////////////
   // Simulation compute pipeline
@@ -803,18 +644,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       uniformBuffer,
       64,
       new Float32Array([
-        // modelViewProjectionMatrix
-        // mvp[0], mvp[1], mvp[2], mvp[3],
-        // mvp[4], mvp[5], mvp[6], mvp[7],
-        // mvp[8], mvp[9], mvp[10], mvp[11],
-        // mvp[12], mvp[13], mvp[14], mvp[15],
-
         view[0], view[4], view[8], // right
-
         0, // padding
-
         view[1], view[5], view[9], // up
-
         0, // padding
       ])
     );
