@@ -174,8 +174,8 @@ fn vs_main(in : VertexInput,
   // Calculate displacement from snow
   // var fragDim=vec2<i32>(textureDimensions(fragtexture).xy);
   // var fragCoord : vec2<i32>=vec2<i32>(0,0);
-  // fragCoord.x=i32(f32(fragDim.x)*f32((coord.x / (textDim.x - 1)) * fragDim.x)); // TODO: What should be uv for the overall grid?
-  // fragCoord.y=i32(f32(fragDim.y)*f32((coord.y / (textDim.y - 1)) * fragDim.y)); // TODO: What should be uv for the overall grid? 
+  // fragCoord.x=i32(f32(coord.x) / f32(textDim.x - 1) * f32(fragDim.x)); // TODO: What should be uv for the overall grid?
+  // fragCoord.y=i32(f32(coord.y) / f32(textDim.y - 1) * f32(fragDim.y)); // TODO: What should be uv for the overall grid? 
 
   // fragCoord.x=i32(in.uv.x); // TODO: What should be uv for the overall grid?
   // fragCoord.y=i32(in.uv.y); // TODO: What should be uv for the overall grid? 
@@ -390,7 +390,6 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
       // Apply melt
     if (celldata.SnowWaterEquivalent > 0.0) {
         if (celldata.DaysSinceLastSnowfall >= 0.0) {
-            // @TODO is time T the degree-days or the time since the last snowfall?
             celldata.SnowAlbedo = 0.4 * (1.0 + exp(-SimulationCSConstants.k_e * celldata.DaysSinceLastSnowfall));
         }
 
