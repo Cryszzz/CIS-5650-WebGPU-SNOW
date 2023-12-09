@@ -878,7 +878,8 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         // mvp[8], mvp[9], mvp[10], mvp[11],
         // mvp[12], mvp[13], mvp[14], mvp[15],
 
-        view[0], view[4], view[8], // right
+        //view[0], view[4], view[8], // right
+        camera.position[0], camera.position[1], camera.position[2], // change from right to camPos
 
         0, // padding
 

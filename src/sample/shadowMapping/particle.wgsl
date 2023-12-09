@@ -109,7 +109,7 @@ fn SolarRadiationIndex(I: f32, A: f32, L0: f32, J: f32) -> vec3<f32>{
 ////////////////////////////////////////////////////////////////////////////////
 struct RenderParams {
   modelViewProjectionMatrix : mat4x4<f32>,
-  right : vec3<f32>,
+  camPos : vec3<f32>,
   up : vec3<f32>
 }
 @binding(0) @group(0) var<uniform> render_params : RenderParams;
@@ -132,6 +132,7 @@ struct VertexOutput {
   @location(2) uv : vec2<f32>, // -1..+1
 
   @builtin(position) Position : vec4<f32>,
+  
 }
 const heightMul:f32=0.01;
 @vertex
@@ -189,22 +190,6 @@ fn vs_main(in : VertexInput,
   return out;
 }
 
-/*
-@vertex
-fn main(
-  @location(0) position: vec3<f32>,
-  @location(1) normal: vec3<f32>,
-  @location(2) uvs: vec2<f32>,
-) -> VertexOutput {
-  var output : VertexOutput;
-
-  //output.position = render_params.modelViewProjectionMatrix * vec4(position, 1.0);
-  output.position = vec4(position, 1.0);
-  //output.fragPos = output.Position.xyz;
-  //output.fragNorm = normal;
-  //output.fragUV=uvs;
-  return output;
-}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 // Fragment shader
@@ -213,6 +198,10 @@ fn main(
 const lightPos : vec3<f32>= vec3<f32> (50.0, 100.0, -100.0);
 const lightDir : vec3<f32>= vec3<f32> (1.0, -1.0, 0.0);
 const ambientFactor = 0.4;
+const fogColor : vec3<f32> = vec3<f32>(0.5, 0.5, 0.5); // Grey fog
+const fogStart : f32 = 10.0; // Start of the fog
+const fogEnd : f32 = 500.0; // End of the fog
+
 /*
 CRYSTAL: There are two texture bind to fragment shader
 fragtexture: the texture buffer that got from compute pipeline
@@ -253,7 +242,16 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   // var color = vec4(out_color.xyz,1.0);
   // Apply a circular particle alpha mask
   //color.a = color.a * max(1.0 - length(in.quad_pos), 0.0);
-  return color;
+
+
+  //including fog start:
+  let camPosition = render_params.camPos; 
+  let fogFactor : f32 = clamp((fogEnd - length(camPosition - in.position)) / (fogEnd - fogStart), 0.0, 1.0);
+  let fogColorVec4 : vec4<f32> = vec4<f32>(fogColor, 1.0); // Convert fogColor to vec4 by adding alpha
+  let colorWithFog : vec4<f32> = mix(fogColorVec4, color, fogFactor); // Interpolate between fog color and fragment color based on fog factor
+  //return color;
+  // Output final color with fog and alpha
+  return colorWithFog;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
