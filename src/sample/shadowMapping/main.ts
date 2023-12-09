@@ -16,7 +16,7 @@ import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours, g
 import { computeSnowCPU } from './snowCompute';
 import { max } from 'wgpu-matrix/dist/2.x/vec2-impl';
 import { getHeightData, numberArray } from '../../meshes/geotiff-utils';
-//make 
+
 const numParticles = 0;
 const particlePositionOffset = 0;
 const particleColorOffset = 4 * 4;
