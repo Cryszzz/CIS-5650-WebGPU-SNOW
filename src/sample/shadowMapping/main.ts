@@ -2,7 +2,6 @@ import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
 
 import particleWGSL from './particle.wgsl';
-import probabilityMapWGSL from './probabilityMap.wgsl';
 import { getTerrainMesh, getTerrainCells } from '../../meshes/terrain';
 import { getSquareMesh} from '../../meshes/square';
 import { WASDCamera, cameraSourceInfo } from './camera';
@@ -44,6 +43,16 @@ function setCamera(position?, target?)
   return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
 }
 
+function resetTerrainBufferMapping(device, cellArray, cellBuffer)
+{
+  device.queue.writeBuffer(
+    cellBuffer,
+    0,
+    cellArray.buffer,
+    cellArray.byteOffset,
+    cellArray.byteLength
+  );
+}
 
 const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
  
@@ -62,11 +71,11 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   let guiTemperature = 0.0;
   let guiPrecipitation = 0.0;
 
-  const cameraParams = 
+  const resetParams: any = 
   {
     resetCamera() {
       camera = setCamera();
-    }
+    },
   };
 
   const weatherParams = 
@@ -82,13 +91,13 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     showMemoryUsage: false,
   }
 
-  var cameraFolder = gui.addFolder('Camera');
-  cameraFolder.open();
-  cameraFolder.add(cameraParams, 'resetCamera').name("Reset Camera");
+  var resetFolder = gui.addFolder('Reset');
+  resetFolder.open();
+  resetFolder.add(resetParams, 'resetCamera').name("Reset Camera");
 
   var weatherFolder = gui.addFolder('Weather');
   weatherFolder.open();
-  weatherFolder.add(weatherParams, 'guiTemperature', -50.0, 70.0).name("Temperature");
+  let temperatureController = weatherFolder.add(weatherParams, 'guiTemperature', -50.0, 70.0).name("Temperature");
   let precipController = weatherFolder.add(weatherParams, 'guiPrecipitation', 0.0, 2.5).name("Precipitation");
   weatherFolder.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
   precipController = precipController.step(0.1);
@@ -125,6 +134,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   const terrainCells = await getTerrainCells(mesh);
   console.log(terrainCells.Size);
   
+
   // const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
   //                                 9 * mesh.width + 16, 9 * mesh.width + 17, 9 * mesh.width + 18,
   //                                 110 * mesh.height + 60, 11 * mesh.height + 7, 9 * mesh.height + 15,
@@ -154,7 +164,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   // }
   const cellBuffer = device.createBuffer({
     size: terrainCells.Size * cellInstanceByteSize,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true,
   });
   {
@@ -177,11 +187,39 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     }
     cellBuffer.unmap();
   }
-      
-    const maxBuffer = device.createBuffer({
-      size: 4 * 4,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    });
+
+  const cellArray = new Float32Array(terrainCells.Size * cellInstanceByteSize / 4);
+  for (let i = 0; i < terrainCells.Size; i++){
+    cellArray.set([
+      terrainCells.Aspect[i],
+      terrainCells.Inclination[i],
+      terrainCells.Altitude[i],
+      terrainCells.Latitude[i],
+      terrainCells.Area[i],
+      terrainCells.AreaXZ[i],
+      terrainCells.SnowWaterEquivalent[i],
+      terrainCells.InterpolatedSWE[i],
+      terrainCells.SnowAlbedo[i],
+      terrainCells.DaysSinceLastSnowfall[i],
+      terrainCells.Curvature[i],
+      0.0,
+    ],i*12);
+  }
+
+  // not typescript lol..
+  resetParams.resetSimulation = function() {
+    weatherParams.guiPrecipitation = 0.0;
+    weatherParams.guiTemperature = 0.0;
+    precipController.updateDisplay();
+    temperatureController.updateDisplay();
+    resetTerrainBufferMapping(device, cellArray, cellBuffer);
+  };
+  resetFolder.add(resetParams, 'resetSimulation').name("Reset Simulation");
+
+  const maxBuffer = device.createBuffer({
+    size: 4 * 4,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  });
   
   
   const indexCount = smesh.triangles.length * 3;
@@ -434,21 +472,6 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   };
 
   //////////////////////////////////////////////////////////////////////////////
-  // Quad vertex buffer
-  //////////////////////////////////////////////////////////////////////////////
-  const quadVertexBuffer = device.createBuffer({
-    size: 6 * 2 * 4, // 6x vec2<f32>
-    usage: GPUBufferUsage.VERTEX,
-    mappedAtCreation: true,
-  });
-  // prettier-ignore
-  const vertexData = [
-    -1.0, -1.0, +1.0, -1.0, -1.0, +1.0, -1.0, +1.0, +1.0, -1.0, +1.0, +1.0,
-  ];
-  new Float32Array(quadVertexBuffer.getMappedRange()).set(vertexData);
-  quadVertexBuffer.unmap();
-
-  //////////////////////////////////////////////////////////////////////////////
   // Simulation compute pipeline
   //////////////////////////////////////////////////////////////////////////////
   const simulationParams = {
@@ -467,8 +490,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
+  let simulationFolder = gui.addFolder('Simulation');
   Object.keys(simulationParams).forEach((k) => {
-    gui.add(simulationParams, k);
+    simulationFolder.add(simulationParams, k);
   });
 
   const computePipeline = device.createComputePipeline({
@@ -713,11 +737,6 @@ const Particles: () => JSX.Element = () =>
       {
         name: './particle.wgsl',
         contents: particleWGSL,
-        editable: true,
-      },
-      {
-        name: './probabilityMap.wgsl',
-        contents: probabilityMapWGSL,
         editable: true,
       },
     ],

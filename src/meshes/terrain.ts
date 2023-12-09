@@ -22,7 +22,7 @@ async function generateTerrainMesh() {
     const width = imgText[0]; // TODO: may have to swap this
     const height = imgText[1]; // TODO: may have to swap this
     const gridSpacing = 1;
-    const skip=8;
+    const skip=7;
     const verticesPerRow = Math.floor(width/skip); // height = verticesPerRow
     const verticesPerColumn = Math.floor(height/skip); //width = verticesPerColumn
     console.log("verticesPerRow"+verticesPerRow );
@@ -210,7 +210,6 @@ async function generateTerrainCells(mesh) {
       if (neighborsIndices[0] == -1 || neighborsIndices[1] == -1 || neighborsIndices[2] == -1 || neighborsIndices[3] == -1
         || neighborsIndices[4] == -1 || neighborsIndices[5] == -1 || neighborsIndices[6] == -1 || neighborsIndices[7] == -1)
         {
-          console.log("index: " + index + " 5e-7");
           cells.Curvature[index] = -0.0005;
           continue;
         }
