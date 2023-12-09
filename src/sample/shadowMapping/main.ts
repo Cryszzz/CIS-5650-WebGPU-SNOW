@@ -83,7 +83,19 @@ const init: SampleInit = async ({ canvas, pageState, gui }) => {
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
   });
 
+  // Fetch and create shader modules
+  const [fogVertexCode, fogFragmentCode] = await Promise.all([
+    fetch('./shaders/fog.vert.wgsl').then((res) => res.text()),
+    fetch('./shaders/fog.frag.wgsl').then((res) => res.text()),
+  ]);
   
+  const fogVertexShaderModule = device.createShaderModule({
+    code: fogVertexCode,
+  });
+  
+  const fogFragmentShaderModule = device.createShaderModule({
+    code: fogFragmentCode,
+  });
 
   const mesh=await getTerrainMesh();
   const smesh=await getSquareMesh();
