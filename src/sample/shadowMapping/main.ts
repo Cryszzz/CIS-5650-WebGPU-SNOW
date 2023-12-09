@@ -107,6 +107,12 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     dayOfYear: 35.0,
   }
 
+  const sizeParams = 
+  {
+    heightMul: 0.01,
+    gridSize: 0.1,
+  }
+
   var resetFolder = gui.addFolder('Reset');
   resetFolder.open();
   resetFolder.add(resetParams, 'resetCamera').name("Reset Camera");
@@ -138,6 +144,10 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   constantsFolder.add(constantsParams, 'hourOfDay', 0.0, 24.0).name("Hour of Day").step(0.5);
   constantsFolder.add(constantsParams, 'dayOfYear', 0.0, 365.0).name("Day of Year").step(1.0);
 
+  var sizeFolder = gui.addFolder('Size');
+  sizeFolder.open();
+  sizeFolder.add(sizeParams, 'heightMul', 0.0, 1.0).name("Height Multiplier").step(0.01);
+  sizeFolder.add(sizeParams, 'gridSize', 0.0, 1.0).name("Grid Size").step(0.01);
 
 
   const devicePixelRatio = window.devicePixelRatio;
@@ -360,7 +370,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     3 * 4 + // right : vec3<f32>
     4 + // padding
     3 * 4 + // up : vec3<f32>
-    4 + // padding
+    4 + // heightMul
     0;
   const uniformBuffer = device.createBuffer({
     size: uniformBufferSize,
@@ -703,9 +713,12 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         view[0], view[4], view[8], // right
         0, // padding
         view[1], view[5], view[9], // up
-        0, // padding
+        sizeParams.heightMul, // heightMul
       ])
     );
+
+    device.queue.writeBuffer(gridBuffer, 0, new Float32Array([sizeParams.gridSize, sizeParams.gridSize]));
+
 
     let maxArray = new Uint32Array([0,0,0,0]);
 

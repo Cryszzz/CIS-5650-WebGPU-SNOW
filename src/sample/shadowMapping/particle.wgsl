@@ -111,10 +111,10 @@ fn SolarRadiationIndex(I: f32, A: f32, L0: f32, J: f32) -> vec3<f32>{
 struct RenderParams {
   modelViewProjectionMatrix : mat4x4<f32>,
   right : vec3<f32>,
-  up : vec3<f32>
+  up : vec3<f32>,
+  heightMul : f32,
 }
 @binding(0) @group(0) var<uniform> render_params : RenderParams;
-// @binding(1) @group(0) var fragtexture : texture_storage_2d<f32, read>;
 @binding(1) @group(0) var fragtexture : texture_2d<f32>;
 @binding(2) @group(0) var origtexture : texture_2d<f32>;
 @binding(3) @group(0) var<uniform>  grid : vec2<f32>;
@@ -149,10 +149,10 @@ fn vs_main(in : VertexInput,
   //textDim=vec2<i32>(5,5);
   let i = i32(instance);
   let cell = vec2<i32>(i % (textDim.x - 1), i / (textDim.x - 1)); // should one be textDim.y - 1?
-  let p0:vec3<f32>=vec3<f32>(0.0,textureLoad(heighttexture,cell,0).x*heightMul,0.0);
-  let p1:vec3<f32>=vec3<f32>(grid.x,textureLoad(heighttexture,vec2<i32>(cell.x+1,cell.y),0).x*heightMul,0.0);
-  let p2:vec3<f32>=vec3<f32>(0.0,textureLoad(heighttexture,vec2<i32>(cell.x,cell.y+1),0).x*heightMul,grid.y);
-  let p3:vec3<f32>=vec3<f32>(grid.x,textureLoad(heighttexture,vec2<i32>(cell.x+1,cell.y+1),0).x*heightMul,grid.y);
+  let p0:vec3<f32>=vec3<f32>(0.0,textureLoad(heighttexture,cell,0).x*render_params.heightMul,0.0);
+  let p1:vec3<f32>=vec3<f32>(grid.x,textureLoad(heighttexture,vec2<i32>(cell.x+1,cell.y),0).x*render_params.heightMul,0.0);
+  let p2:vec3<f32>=vec3<f32>(0.0,textureLoad(heighttexture,vec2<i32>(cell.x,cell.y+1),0).x*render_params.heightMul,grid.y);
+  let p3:vec3<f32>=vec3<f32>(grid.x,textureLoad(heighttexture,vec2<i32>(cell.x+1,cell.y+1),0).x*render_params.heightMul,grid.y);
   /*let p0:vec3<f32>=vec3<f32>(0.0,0.0,0.0);
   let p1:vec3<f32>=vec3<f32>(grid.x,30.0,0.0);
   let p2:vec3<f32>=vec3<f32>(0.0,30.0,grid.y);
@@ -190,14 +190,14 @@ fn vs_main(in : VertexInput,
   // fragCoord.y = clamp(fragCoord.y, 0, fragDim.y - 1);
 
   var testcolor = textureLoad(fragtexture, fragCoord.xy, 0); 
-  var testColorMax = clamp(testcolor * 500 / (f32(maxSnow[0])), vec4(0.0), vec4(375.0)); // change these values so that they can be multiplied by heightMul
+  var testColorMax = clamp(testcolor * 500 / (f32(maxSnow[0])), vec4(0.0), vec4(375.0)); // change these values so that they can be multiplied by render_params.heightMul
   // var testColorMax = clamp(vec4<f32>(f32((coord.x / (textDim.x)) * fragDim.x), f32((coord.y / (textDim.y)) * fragDim.y), 0.0, 1.0), vec4<f32>(0.0), vec4<f32>(1.0));
   let cellOffset = vec2<f32>(cell-textDim/2)*grid;
   var gridPos:vec2<f32> = (in.position.xz) * (grid/2.0) + cellOffset;
   
   var height:f32=textureLoad(heighttexture,coord,0).x;
-  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,(height + testColorMax.x)*heightMul,gridPos.y, 1.0);
-  out.position=vec3<f32>(gridPos.x,(height + testColorMax.x)*heightMul,gridPos.y);
+  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,(height + testColorMax.x)*render_params.heightMul,gridPos.y, 1.0);
+  out.position=vec3<f32>(gridPos.x,(height + testColorMax.x)*render_params.heightMul,gridPos.y);
   // out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,f32(f32(coord.y) / 10),gridPos.y, 1.0);
   // out.position = vec3<f32>(gridPos.x,f32(f32(coord.y) / 10),gridPos.y);
   out.normal =normal;
