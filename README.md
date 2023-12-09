@@ -6,7 +6,7 @@ by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
 ![Teaser](img/teaser.gif)
 
-![demo](https://cryszzz.github.io/CIS-5650-Final-Project/samples/shadowMapping)
+[live website](https://cryszzz.github.io/CIS-5650-Final-Project/samples/shadowMapping)
 
 ## Installation
 1. Clone this repo
