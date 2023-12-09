@@ -6,6 +6,8 @@ by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
 ![Teaser](img/teaser.gif)
 
+![demo](https://cryszzz.github.io/CIS-5650-Final-Project/samples/shadowMapping)
+
 ## Installation
 1. Clone this repo
 2. Run `npm i`
