@@ -19,18 +19,13 @@ async function loadAndUseHeightData() {
 
 async function generateTerrainMesh() {
     const heightData = await loadAndUseHeightData();
-    //console.log("imgarray");
-    //console.log(imgText);
     const height = imgText[1];
     const width = imgText[0];
-    //const height = 160;
-    //const width = 190;
     const gridSpacing = 1;
-    // const gridSpacing = 4;
-    const skip=20;
+    const skip=4;
     const uvrepeat=1;
-    const verticesPerRow = Math.floor(height/skip) - 1;
-    const verticesPerColumn = Math.floor(width/skip) - 1;
+    const verticesPerRow = Math.floor(height/skip) - 1; // height = verticesPerRow
+    const verticesPerColumn = Math.floor(width/skip) - 1; //width = verticesPerColumn
     console.log("verticesPerRow"+verticesPerRow );
     console.log("verticesPerColumn"+verticesPerColumn );
 
@@ -38,47 +33,11 @@ async function generateTerrainMesh() {
     const uvs: [number, number][] = [];
     for (let x = 0; x <verticesPerColumn*skip; x+=skip) {
         for (let z = 0; z <verticesPerRow*skip; z+=skip) {
-          // const dataIndex = x + z * verticesPerRow;
           // console.log(`x: ${x}, z: ${z}, dataIndex: ${dataIndex}, heightData[dataIndex]: ${heightData[dataIndex]}`);
-
-
           const data=heightData[x*width+z];
-          //console.log(data);
           positions.push([(x - width / 2)*gridSpacing, data/100, (z - height / 2)*gridSpacing]);
-          // positions.push([(x - width / 2)*gridSpacing, data, (z - height / 2)*gridSpacing]);
-          //positions.push([(x - width / 2)*gridSpacing, 0, (z - height / 2)*gridSpacing]);
-          // TODO: I think there may still be a bug with UV
-          // uvs.push([x/(verticesPerRow*skip)*uvrepeat,1.0-z/(verticesPerRow*skip)*uvrepeat]);
-          
         }
     }
-    //console.log(uvs);
-
-    // for (let x = 0; x <width; x++) {
-    //   for (let z = 0; z <height; z++) {
-    //     const data=heightData[x+z*width];
-    //     //console.log(data);
-    //     positions.push([(x - width / 2)*gridSpacing, data/100, (z - height / 2)*gridSpacing]);
-    //     const u = (x - width / 2) * uvrepeat / width;
-    //     const v = (z - height / 2) * uvrepeat / height;
-    //     uvs.push([u, v]);
-    //     // uvs.push([u, v]);
-    //     // uvs.push([x - width / 2*uvrepeat,verticesPerRow*skip-z/(verticesPerRow*skip)*uvrepeat]);
-    //   }
-    // }
-
-    // const triangles: [number, number, number][] = [];
-    // for (let x = 0; x < verticesPerColumn - 1; x++) {
-    //     for (let z = 0; z < verticesPerRow - 1; z++) {
-    //         let topLeft = x * verticesPerRow + z;
-    //         let topRight = topLeft + 1;
-    //         let bottomLeft = topLeft + verticesPerRow;
-    //         let bottomRight = bottomLeft + 1;
-
-    //         triangles.push([topLeft, topRight, bottomLeft]);
-    //         triangles.push([topRight, bottomRight, bottomLeft]);
-    //     }
-    // }
 
     const mesh = {
         positions: positions as [number, number, number][],
