@@ -33,7 +33,7 @@ async function generateTerrainMesh() {
         for (let x = 0; x <verticesPerRow*skip; x+=skip) {
           // console.log(`x: ${x}, z: ${z}, heightData[z*width+x]: ${heightData[z*width+x]}`);
           const data=heightData[z*width+x];
-          positions.push([(x - width / 2)*gridSpacing, data, (z - height / 2)*gridSpacing]);
+          positions.push([(x - width / 2)*gridSpacing, data / 10, (z - height / 2)*gridSpacing]);
         }
     }
 

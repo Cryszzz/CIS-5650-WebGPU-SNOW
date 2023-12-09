@@ -91,24 +91,53 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     showMemoryUsage: false,
   }
 
+  const constantsParams = 
+  {
+    measurementAltitude: 0.0,
+    tSnowA: 0.0,
+    tSnowB: 2.0,
+    tMeltA: -5.0,
+    tMeltB: -2.0,
+    k_e: 0.2,
+    k_m: 4.0,
+    meltFactor: 2.0,
+    timesteps: 0.0,
+    currentSimulationStep: 0.0,
+    hourOfDay: 12.0,
+    dayOfYear: 35.0,
+  }
+
   var resetFolder = gui.addFolder('Reset');
   resetFolder.open();
   resetFolder.add(resetParams, 'resetCamera').name("Reset Camera");
 
   var weatherFolder = gui.addFolder('Weather');
   weatherFolder.open();
-  let temperatureController = weatherFolder.add(weatherParams, 'guiTemperature', -50.0, 70.0).name("Temperature");
-  let precipController = weatherFolder.add(weatherParams, 'guiPrecipitation', 0.0, 2.5).name("Precipitation");
+  let temperatureController = weatherFolder.add(weatherParams, 'guiTemperature', -50.0, 120.0).name("Temperature");
+  let precipController = weatherFolder.add(weatherParams, 'guiPrecipitation', 0.0, 20.0).name("Precipitation").step(0.01);
   weatherFolder.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
-  precipController = precipController.step(0.1);
+  // precipController = precipController.step(0.1);
 
   var statsFolder = gui.addFolder('Stats');
   statsFolder.open();
   statsFolder.add(statsParams, 'showStats').name("Show Stats");
   statsFolder.add(statsParams, 'showMemoryUsage').name("Memory Usage");
 
-  var constantsFolder = gui.addFolder('Constants');
+  var constantsFolder = gui.addFolder('Simulation Constants');
   constantsFolder.open();
+  constantsFolder.add(constantsParams, 'measurementAltitude', 0.0, 10000.0).name("Measurement Altitude");
+  constantsFolder.add(constantsParams, 'tSnowA', -5.0, 5.0).name("Temp Snow A").step(0.5);
+  constantsFolder.add(constantsParams, 'tSnowB', -5.0, 5.0).name("Temp Snow B").step(0.5);
+  constantsFolder.add(constantsParams, 'tMeltA', -10.0, 5.0).name("Temp Melt A").step(0.5);
+  constantsFolder.add(constantsParams, 'tMeltB', -10.0, 5.0).name("Temp Melt B").step(0.5);
+  constantsFolder.add(constantsParams, 'k_e', 0.0, 1.0).name("k_e").step(0.1);
+  constantsFolder.add(constantsParams, 'k_m', 0.0, 10.0).name("k_m").step(0.5);
+  constantsFolder.add(constantsParams, 'meltFactor', 0.0, 10.0).name("Melt Factor").step(0.1);
+  constantsFolder.add(constantsParams, 'timesteps', 0.0, 100.0).name("Timesteps").step(1.0);
+  constantsFolder.add(constantsParams, 'currentSimulationStep', 0.0, 100.0).name("Curr Step").step(1.0);
+  constantsFolder.add(constantsParams, 'hourOfDay', 0.0, 24.0).name("Hour of Day").step(0.5);
+  constantsFolder.add(constantsParams, 'dayOfYear', 0.0, 365.0).name("Day of Year").step(1.0);
+
 
 
   const devicePixelRatio = window.devicePixelRatio;
@@ -480,10 +509,11 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   };
 
   const simulationUBOBufferSize =
-    1 * 4 + // deltaTime
-    3 * 4 + // padding
-    4 * 4 + // seed
-    4 * 4 + //temp+perci
+    7 * 4 + // simulationCS
+    1 * 4 + // padding
+    4 * 4 + // simulationCSVar
+    2 * 4 + // weatherData: temp+perci
+    2 * 4 + // padding
     0;
   const simulationUBOBuffer = device.createBuffer({
     size: simulationUBOBufferSize,
@@ -620,18 +650,20 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       simulationUBOBuffer,
       0,
       new Float32Array([
-        simulationParams.simulate ? simulationParams.deltaTime : 0.0,
-        0.0,
-        0.0,
-        0.0, // padding
-        Math.random() * 100,
-        Math.random() * 100, // seed.xy
-        1 + Math.random(),
-        1 + Math.random(), // seed.zw
+        constantsParams.measurementAltitude,
+        constantsParams.tSnowA,
+        constantsParams.tSnowB,
+        constantsParams.tMeltA,
+        constantsParams.tMeltB,
+        constantsParams.k_e,
+        constantsParams.k_m,
+        constantsParams.meltFactor,
+        constantsParams.timesteps,
+        constantsParams.currentSimulationStep,
+        constantsParams.hourOfDay,
+        constantsParams.dayOfYear,
         weatherParams.useGuiWeather ? weatherParams.guiTemperature : weatherData.temperature[0], //TODO: bind weather Data temperature per frame
         weatherParams.useGuiWeather ? weatherParams.guiPrecipitation : weatherData.precipitation[0], //TODO: bind weather Data percipitation per frame
-        //getHourOfDay(now),//padding
-        //getDayOfYear(now),
         0.0,
         0.0,
       ])

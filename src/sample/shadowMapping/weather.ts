@@ -80,7 +80,7 @@ export const getWeatherData = (time: number, width: number, height: number) => {
 
       if (x === 0 && z === 0 && x == width - 2 && z == height - 2)
       {
-        console.log("weather point 3");
+        console.log("");
       }
 
       // calculate temperature
