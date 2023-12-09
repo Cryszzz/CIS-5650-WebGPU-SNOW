@@ -90,7 +90,11 @@ const SampleLayout: React.FunctionComponent<
     if (props.gui && process.browser) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const dat = require('dat.gui');
-      return new dat.GUI({ autoPlace: false });
+      const gui = new dat.GUI({ autoPlace: false });
+      // HACK: Make
+      gui.domElement.style.position = 'relative';
+      gui.domElement.style.zIndex = '1000';
+      return gui;
     }
     return undefined;
   }, []);
@@ -187,12 +191,12 @@ const SampleLayout: React.FunctionComponent<
         <meta name="description" content={props.description} />
         <meta httpEquiv="origin-trial" content={props.originTrial} />
       </Head>
+
       <div className={styles.canvasContainer}>
         <div
           style={{
             position: 'absolute',
-            left: 0,
-            top: 0,
+            left: 10,
           }}
           ref={statsParentRef}
         ></div>
@@ -205,6 +209,7 @@ const SampleLayout: React.FunctionComponent<
         ></div>
         <canvas ref={canvasRef}></canvas>
       </div>
+      
     </main>
   );
 };

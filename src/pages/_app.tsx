@@ -44,9 +44,7 @@ const MainLayout: React.FunctionComponent<AppProps> = ({
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
       </Head>
-      <div className={styles.wrapper}>
-        <Component {...pageProps} />
-      </div>
+      <Component {...pageProps} />
     </>
   );
 };

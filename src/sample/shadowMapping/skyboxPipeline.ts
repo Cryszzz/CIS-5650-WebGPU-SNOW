@@ -72,7 +72,8 @@ export async function loadCubemapTexture(device) {
 }
 
 export async function renderSkybox(device, canvas, viewMatrix, projectionMatrix, pipeline, verticesBuffer, uniformBuffer, uniformBindGroup,passEncoder,cameraViewProj) {
-
+    //console.log(uniformBindGroup);
+  const context = canvas.getContext('webgpu');
 
   // Update transformation matrices and write to buffer
   const modelMatrix = mat4.scaling(vec3.fromValues(1000, 1000, 1000));
@@ -88,6 +89,21 @@ export async function renderSkybox(device, canvas, viewMatrix, projectionMatrix,
         cameraViewProj.byteOffset,
         cameraViewProj.byteLength
     )
+
+  // Setup render pass descriptor
+  const renderPassDescriptor = {
+      colorAttachments: [{ view: context.getCurrentTexture().createView(), loadOp: 'clear', storeOp: 'store' }],
+      depthStencilAttachment: {
+          view: device.createTexture({
+              size: [canvas.width, canvas.height],
+              format: 'depth24plus',
+              usage: GPUTextureUsage.RENDER_ATTACHMENT,
+          }).createView(),
+          depthClearValue: 1.0,
+          depthLoadOp: 'clear',
+          depthStoreOp: 'store',
+      },
+  };
 
   // Issue draw call for the skybox
   //const commandEncoder = device.createCommandEncoder();

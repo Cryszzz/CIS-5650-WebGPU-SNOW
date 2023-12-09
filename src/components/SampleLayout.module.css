@@ -1,18 +1,19 @@
 .canvasContainer {
   text-align: center;
   position: relative;
-  margin:0px;
+  margin-top: 10px;
 }
 
 .canvasContainer>canvas {
-  height: 99vh !important;
-  width: 100% !important;
+  height: 100vh;
+  aspect-ratio: 1;
 }
 
 nav.sourceFileNav ul {
   list-style-type: none;
   padding: 0;
   margin: 0;
+  margin-top: 15px;
 }
 
 nav.sourceFileNav li {
@@ -25,12 +26,24 @@ nav.sourceFileNav li {
 nav.sourceFileNav li a {
   display: block;
   margin: 0;
+  padding: 10px;
   color: white;
   background-color: #403e3e;
 }
 
+nav.sourceFileNav li:hover {
+  height: 100%;
+  box-shadow: 0 -10px 0 0 rgb(167, 167, 167);
+  border-radius: 10px
+}
+
 nav.sourceFileNav li a[data-active=true] {
   background-color: #282823;
+}
+
+nav.sourceFileNav li:has(a[data-active=true]) {
+  box-shadow: 0 -10px 0 0 rgb(167, 167, 167);
+  border-radius: 10px;
 }
 
 .sourceFileContainer {

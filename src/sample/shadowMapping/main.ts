@@ -1,7 +1,7 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
-import { renderSkybox } from './skyboxPipeline';
-import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../../meshes/cube';
+//import { renderSkybox } from './skyboxPipeline';
+//import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../../meshes/cube';
 import { createSkyboxPipeline, loadCubemapTexture } from './skyboxPipeline';
 
 
@@ -48,7 +48,7 @@ function setCamera(position?, target?)
   return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
 }
 
-let skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup;
+//let skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup;
 const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
  
   const adapter = await navigator.gpu.requestAdapter();
@@ -105,6 +105,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   // Initialize the skybox pipeline
   //const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
+  /*
     // Initialize the skybox pipeline
     const skyboxPipeline = await createSkyboxPipeline(device, presentationFormat);
 
@@ -150,7 +151,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       ],
     });
     console.log(skyboxUniformBindGroup);
-
+  */
   context.configure({
     device,
     format: presentationFormat,
