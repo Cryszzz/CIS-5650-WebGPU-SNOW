@@ -170,23 +170,35 @@ fn vs_main(in : VertexInput,
     coord.y+=1;
   }
   //let cell = vec2<i32>(i % 2, i / 2);
+
+  // Calculate displacement from snow
+  // var fragDim=vec2<i32>(textureDimensions(fragtexture).xy);
+  // var fragCoord : vec2<i32>=vec2<i32>(0,0);
+  // fragCoord.x=i32(f32(fragDim.x)*f32((coord.x / (textDim.x - 1)) * fragDim.x)); // TODO: What should be uv for the overall grid?
+  // fragCoord.y=i32(f32(fragDim.y)*f32((coord.y / (textDim.y - 1)) * fragDim.y)); // TODO: What should be uv for the overall grid? 
+
+  // fragCoord.x=i32(in.uv.x); // TODO: What should be uv for the overall grid?
+  // fragCoord.y=i32(in.uv.y); // TODO: What should be uv for the overall grid? 
+
+  // // Calculate fragment coordinates based on the current cell index (coord)
+  // fragCoord.x = i32(f32(fragDim.x) * (f32(coord.x) + 0.5) / f32(textDim.x - 1));
+  // fragCoord.y = i32(f32(fragDim.y) * (f32(coord.y) + 0.5) / f32(textDim.y - 1));
+
+  // // Ensure that fragCoord is within the valid range for the fragtexture dimensions
+  // fragCoord.x = clamp(fragCoord.x, 0, fragDim.x - 1);
+  // fragCoord.y = clamp(fragCoord.y, 0, fragDim.y - 1);
+
+  // var testcolor = textureLoad(fragtexture, fragCoord.xy, 0); 
+  // var testColorMax = clamp(testcolor * 1000 / (f32(maxSnow[0])), vec4(0.0), vec4(750.0)); // change these values so that they can be multiplied by heightMul
+  // var testColorMax = clamp(vec4<f32>(f32((coord.x / (textDim.x)) * fragDim.x), f32((coord.y / (textDim.y)) * fragDim.y), 0.0, 1.0), vec4<f32>(0.0), vec4<f32>(1.0));
   let cellOffset = vec2<f32>(cell-textDim/2)*grid;
   var gridPos:vec2<f32> = (in.position.xz) * (grid/2.0) + cellOffset;
   
-  // Calculate displacement from snow
-  var fragDim=vec2<i32>(textureDimensions(fragtexture).xy);
-  var fragCoord : vec2<i32>=vec2<i32>(0,0);
-  fragCoord.x=i32(f32(fragDim.x)*f32(coord.x / textDim.x)); // TODO: What should be uv for the overall grid?
-  fragCoord.y=i32(f32(fragDim.y)*f32(coord.y / textDim.y)); // TODO: What should be uv for the overall grid? 
-  // var testcolor = textureLoad(fragtexture, fragCoord.xy, 0); 
-  // var testColorMax = clamp(testcolor * 100 / (f32(maxSnow[0])), vec4(0.0), vec4(75)); // change these values so that they can be multiplied by heightMul
-  var testColorMax = clamp(vec4<f32>(f32((coord.x / (textDim.x)) * fragDim.x), f32((coord.y / (textDim.y)) * fragDim.y), 0.0, 1.0), vec4<f32>(0.0), vec4<f32>(1.0));
-
   var height:f32=textureLoad(heighttexture,coord,0).x;
-  // out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,(height + testColorMax.x)*heightMul,gridPos.y, 1.0);
-  // out.position=vec3<f32>(gridPos.x,(height+ testColorMax.x)*heightMul,gridPos.y);
-  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,f32(fragDim.x)*f32(f32(coord.x) / f32(textDim.x)) * 10,gridPos.y, 1.0);
-  out.position = vec3<f32>(gridPos.x,f32(fragDim.x)*f32(f32(coord.x) / f32(textDim.x)) * 10,gridPos.y);
+  out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,(height)*heightMul,gridPos.y, 1.0);
+  out.position=vec3<f32>(gridPos.x,(height)*heightMul,gridPos.y);
+  // out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,f32(f32(coord.y) / 10),gridPos.y, 1.0);
+  // out.position = vec3<f32>(gridPos.x,f32(f32(coord.y) / 10),gridPos.y);
   out.normal =normal;
   out.uv = vec2<f32>(f32(coord.x)/f32(textDim.x),f32(coord.y)/f32(textDim.y));
   return out;
@@ -243,10 +255,10 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   // this should be maxSnow[0] instead of maxSnow[0] * 0.4, but leaving it here until debugged
   // var testColorMaxFirst = clamp(testcolor / (f32(maxSnow[0]) * 0.35), vec4(0.0), vec4(1.0));
   var testColorMaxFirst = testcolor / (f32(maxSnow[0]) * 0.35);
-  var expFactors = vec4<f32>(2.0);
   var testColorMaxScaled =  testColorMaxFirst * 0.7 + 0.27;
   var testcolorMax = clamp(testColorMaxScaled, vec4(0.0), vec4(1.0));
   // var out_color = testcolorMax;
+  // var out_color = testcolor;
   var out_color = (1.0-testcolorMax.x)*origcolor+testcolorMax.x*testcolorMax;
   // var out_color = vec4(maxSnow[0]);
 
@@ -322,11 +334,11 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     
     var textDim=vec2<i32>(textureDimensions(texture).xy);
     var text2Dim=vec2<i32>(textureDimensions(texture2).xy);
-    var coord : vec2<i32>=vec2<i32>(global_invocation_id.xy);
+    var coord : vec2<i32>=vec2<i32>(global_invocation_id.yx);
     var idx: u32= global_invocation_id.x*textureDimensions(texture2).y+global_invocation_id.y;
     //var idx: u32= global_invocation_id.x;
 
-    init_rand(idx, sim_params.seed);
+    // init_rand(idx, sim_params.seed);
     var loadcoord : vec2<i32>=vec2<i32>(0,0);
     loadcoord.x=i32(coord.x*textDim.x/text2Dim.x);
     loadcoord.y=i32(coord.y*textDim.y/text2Dim.y);
@@ -334,7 +346,8 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     var color = textureLoad(texture, loadcoord, 0);
     
     //CRYSTAL: here is example of how to store color to texture, just modify color.xyz to change color
-    //textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(color.xyz,1.0));
+    // if (coord)
+    // textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(color.xyz,1.0));
 
 
     //CRYSTAL: starting from this part, use the same code from that unreal project
@@ -435,51 +448,4 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     
     textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(output_color,output_color,output_color,1.0));
 
-  // (11,6),(11,7)
-  // (9,15),(9,16),(9,17)
-
-  // Apply gravity
-  /*particle.velocity.z = particle.velocity.z - sim_params.deltaTime * 0.5;
-
-  // Basic velocity integration
-  particle.position = particle.position + sim_params.deltaTime * particle.velocity;
-
-  // Age each particle. Fade out before vanishing.
-  particle.lifetime = particle.lifetime - sim_params.deltaTime;
-  particle.color.a = smoothstep(0.0, 0.5, particle.lifetime);
-
-  // If the lifetime has gone negative, then the particle is dead and should be
-  // respawned.
-  if (particle.lifetime < 0.0) {
-    // Use the probability map to find where the particle should be spawned.
-    // Starting with the 1x1 mip level.
-    
-    for (var level = u32(textureNumLevels(texture) - 1); level > 0; level--) {
-      // Load the probability value from the mip-level
-      // Generate a random number and using the probabilty values, pick the
-      // next texel in the next largest mip level:
-      //
-      // 0.0    probabilites.r    probabilites.g    probabilites.b   1.0
-      //  |              |              |              |              |
-      //  |   TOP-LEFT   |  TOP-RIGHT   | BOTTOM-LEFT  | BOTTOM_RIGHT |
-      //
-      let probabilites = textureLoad(texture, coord, level);
-      let value = vec4<f32>(rand());
-      let mask = (value >= vec4<f32>(0.0, probabilites.xyz)) & (value < probabilites);
-      coord = coord * 2;
-      coord.x = coord.x + select(0, 1, any(mask.yw)); // x  y
-      coord.y = coord.y + select(0, 1, any(mask.zw)); // z  w
-    }
-    let uv = vec2<f32>(coord) / vec2<f32>(textureDimensions(texture));
-    particle.position = vec3<f32>((uv - 0.5) * 3.0 * vec2<f32>(1.0, -1.0), 0.0);
-    particle.color = textureLoad(texture, coord, 0);
-    textureStore(texture2, vec2<i32>(coord.xy), vec4<f32>(0.0,0.0,0.0,0.0));
-    particle.velocity.x = (rand() - 0.5) * 0.1;
-    particle.velocity.y = (rand() - 0.5) * 0.1;
-    particle.velocity.z = rand() * 0.3;
-    particle.lifetime = 0.5 + rand() * 3.0;
-  }*/
-
-  // Store the new particle value
-  //data.particles[idx] = particle;
 }

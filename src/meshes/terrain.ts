@@ -27,10 +27,10 @@ async function generateTerrainMesh() {
     //const width = 190;
     const gridSpacing = 1;
     // const gridSpacing = 4;
-    const skip=16;
+    const skip=20;
     const uvrepeat=1;
-    const verticesPerRow = Math.floor((Math.floor(height/skip)-1)/2)*2+1;
-    const verticesPerColumn = Math.floor((Math.floor(width/skip)-1)/2)*2+1;
+    const verticesPerRow = Math.floor(height/skip) - 1;
+    const verticesPerColumn = Math.floor(width/skip) - 1;
     console.log("verticesPerRow"+verticesPerRow );
     console.log("verticesPerColumn"+verticesPerColumn );
 
@@ -42,9 +42,10 @@ async function generateTerrainMesh() {
           // console.log(`x: ${x}, z: ${z}, dataIndex: ${dataIndex}, heightData[dataIndex]: ${heightData[dataIndex]}`);
 
 
-          const data=heightData[x*height+z];
+          const data=heightData[x*width+z];
           //console.log(data);
-          positions.push([(x - width / 2)*gridSpacing, data / 100, (z - height / 2)*gridSpacing]);
+          positions.push([(x - width / 2)*gridSpacing, data/100, (z - height / 2)*gridSpacing]);
+          // positions.push([(x - width / 2)*gridSpacing, data, (z - height / 2)*gridSpacing]);
           //positions.push([(x - width / 2)*gridSpacing, 0, (z - height / 2)*gridSpacing]);
           // TODO: I think there may still be a bug with UV
           // uvs.push([x/(verticesPerRow*skip)*uvrepeat,1.0-z/(verticesPerRow*skip)*uvrepeat]);

@@ -123,10 +123,10 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   for (let i = 0; i < terrainCellsDebugIndex.length; i++) {
     const currIndex = terrainCellsDebugIndex[i];
     console.log("Terrain Cell: " + currIndex)
-    // console.log("P0: " + i + " " + terrainCells.P0[i]);
-    // console.log("P1: " + i + " " + terrainCells.P1[i]);
-    // console.log("P2: " + i + " " + terrainCells.P2[i]);
-    // console.log("P3: " + i + " " + terrainCells.P3[i]);
+    console.log("P0: " + " " + terrainCells.P0[i]);
+    console.log("P1: " + " " + terrainCells.P1[i]);
+    console.log("P2: " + " " + terrainCells.P2[i]);
+    console.log("P3: " + " " + terrainCells.P3[i]);
     console.log("Aspect: " + " " + terrainCells.Aspect[currIndex]);
     console.log("Inclination: " + " " + terrainCells.Inclination[currIndex]);
     console.log("Altitude: " + " " + terrainCells.Altitude[currIndex]);
@@ -314,6 +314,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         GPUTextureUsage.COPY_DST |
         GPUTextureUsage.RENDER_ATTACHMENT,
   });
+  console.log("writableTexture width: " + (mesh.width - 1) + " height: " + (mesh.height - 1));
   const uniformBufferSize =
     4 * 4 * 4 + // modelViewProjectionMatrix : mat4x4<f32>
     3 * 4 + // right : vec3<f32>
@@ -328,7 +329,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   let cubeTexture: GPUTexture;
   {
     const response = await fetch('../assets/img/file/k2-t.png');
-    //const response = await fetch('../assets/img/Di-3d.png');
+    // const response = await fetch('../assets/img/Di-3d.png');
     const imageBitmap = await createImageBitmap(await response.blob());
 
     cubeTexture = device.createTexture({
