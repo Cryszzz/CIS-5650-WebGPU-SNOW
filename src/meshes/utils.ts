@@ -102,3 +102,16 @@ export function getNumDaysPassed(time: number) {
 export function radiansToDegrees(radians: number) {
   return (radians * 180) / Math.PI;
 }
+
+export function getMin(array)
+{
+  let min = Infinity;
+  for (let i = 0; i < array.length; i++)
+  {
+    if (array[i] < min)
+    {
+      min = array[i];
+    }
+  }
+  return min;
+}
