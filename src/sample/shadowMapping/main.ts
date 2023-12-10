@@ -104,7 +104,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     timesteps: 0.0,
     currentSimulationStep: 0.0,
     hourOfDay: 12.0,
-    dayOfYear: 35.0,
+    dayOfYear: 251.0,
   }
 
   const sizeParams = 
@@ -119,8 +119,8 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
 
   var weatherFolder = gui.addFolder('Weather');
   weatherFolder.open();
-  let temperatureController = weatherFolder.add(weatherParams, 'guiTemperature', -50.0, 120.0).name("Temperature");
-  let precipController = weatherFolder.add(weatherParams, 'guiPrecipitation', 0.0, 20.0).name("Precipitation").step(0.01);
+  let temperatureController = weatherFolder.add(weatherParams, 'guiTemperature', -50.0, 70.0).name("Temperature");
+  let precipController = weatherFolder.add(weatherParams, 'guiPrecipitation', 0.0, 3.0).name("Precipitation").step(0.01);
   weatherFolder.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
   // precipController = precipController.step(0.1);
 
@@ -174,33 +174,33 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   console.log(terrainCells.Size);
   
 
-  // const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
-  //                                 9 * mesh.width + 16, 9 * mesh.width + 17, 9 * mesh.width + 18,
-  //                                 110 * mesh.height + 60, 11 * mesh.height + 7, 9 * mesh.height + 15,
-  //                                 9 * mesh.height + 16, 9 * mesh.height + 17, 9 * mesh.height + 18,
-  //                                 30851, 30852, 30853]
+  const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
+                                  9 * mesh.width + 16, 9 * mesh.width + 17, 9 * mesh.width + 18,
+                                  110 * mesh.height + 60, 11 * mesh.height + 7, 9 * mesh.height + 15,
+                                  9 * mesh.height + 16, 9 * mesh.height + 17, 9 * mesh.height + 18,
+                                  30851, 30852, 30853]
 
   // // for (let i = 0; i < 580; i += 20) {
-  // for (let i = 0; i < terrainCellsDebugIndex.length; i++) {
-  //   const currIndex = terrainCellsDebugIndex[i];
+  for (let i = 0; i < terrainCellsDebugIndex.length; i++) {
+    const currIndex = terrainCellsDebugIndex[i];
   //   console.log("Terrain Cell: " + currIndex)
   //   console.log("P0: " + " " + terrainCells.P0[currIndex]);
   //   console.log("P1: " + " " + terrainCells.P1[currIndex]);
   //   console.log("P2: " + " " + terrainCells.P2[currIndex]);
   //   console.log("P3: " + " " + terrainCells.P3[currIndex]);
   //   console.log("Aspect: " + " " + terrainCells.Aspect[currIndex]);
-  //   console.log("Inclination: " + " " + terrainCells.Inclination[currIndex]);
+    console.log("Inclination: " + " " + terrainCells.Inclination[currIndex]);
   //   console.log("Altitude: " + " " + terrainCells.Altitude[currIndex]);
   //   // console.log("Latitude: " + i + " " + terrainCells.Latitude[i]);
   //   console.log("Area: " + " " + terrainCells.Area[currIndex]);
-  //   console.log("AreaXZ: " + " " + terrainCells.AreaXZ[currIndex]);
+    console.log("AreaXZ: " + " " + terrainCells.AreaXZ[currIndex] * 100);
   //   // console.log("SnowWaterEquivalent: " + i + " " + terrainCells.SnowWaterEquivalent[i]);
   //   // console.log("InterpolatedSWE: " + i + " " + terrainCells.InterpolatedSWE[i]);
   //   // console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
   //   // console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
   //   console.log("Curvature: " + " " + terrainCells.Curvature[currIndex]);
   // // }
-  // }
+  }
   const cellBuffer = device.createBuffer({
     size: terrainCells.Size * cellInstanceByteSize,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -683,11 +683,11 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     //   if (weatherParams.useGuiWeather)
     //   {
     //     console.log("use gui weather");
-    //     computeSnowCPU(terrainCells, weatherParams.guiTemperature, weatherParams.guiPrecipitation)
+    //     computeSnowCPU(terrainCells, constantsParams, weatherParams.guiTemperature, weatherParams.guiPrecipitation);
     //   }
     //   else
     //   {
-    //     computeSnowCPU(terrainCells);
+    //     computeSnowCPU(terrainCells, constantsParams);
     //   }
     // }
 

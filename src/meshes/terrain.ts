@@ -22,7 +22,7 @@ async function generateTerrainMesh() {
     const width = imgText[0]; // TODO: may have to swap this
     const height = imgText[1]; // TODO: may have to swap this
     const gridSpacing = 1;
-    const skip=7;
+    const skip=3;
     const verticesPerRow = Math.floor(width/skip); // height = verticesPerRow
     const verticesPerColumn = Math.floor(height/skip); //width = verticesPerColumn
     console.log("verticesPerRow"+verticesPerRow );
@@ -33,7 +33,7 @@ async function generateTerrainMesh() {
         for (let x = 0; x <verticesPerRow*skip; x+=skip) {
           // console.log(`x: ${x}, z: ${z}, heightData[z*width+x]: ${heightData[z*width+x]}`);
           const data=heightData[z*width+x];
-          positions.push([(x - width / 2)*gridSpacing, data / 10, (z - height / 2)*gridSpacing]);
+          positions.push([(x - width / 2)*gridSpacing, data/10, (z - height / 2)*gridSpacing]);
         }
     }
 
@@ -139,9 +139,12 @@ async function generateTerrainCells(mesh) {
       cells.Area[cellIndex] = Math.abs(vec3.len(vec3.cross(vec3.create(), P0_minus_P2, P0_minus_P2)) / 2 + vec3.len(vec3.cross(vec3.create(), P1_minus_P2, P0_minus_P2)) / 2);
       cells.AreaXZ[cellIndex] = Math.abs((vec2.cross(vec3.create(), P0_minus_P2ProjXZ, P0_minus_P2ProjXZ))[2] / 2 + (vec2.cross(vec3.create(), P1_minus_P2ProjXZ, P0_minus_P2ProjXZ))[2] / 2);
 
-      let P0toP3 = vec3.subtract(vec3.create(), P2, P0);
-      let P0toP3ProjXZ = vec3.fromValues(P0toP3[0], P0toP3[2], 0);
+      let P0toP3 = vec3.subtract(vec3.create(), P3, P0);
+      // console.log("P0toP3: ", P0toP3);
+      let P0toP3ProjXZ = vec3.fromValues(P0toP3[0], 0, P0toP3[2]);
+      // console.log("P0toP3ProjXZ: ", P0toP3ProjXZ);
       cells.Inclination[cellIndex] = vec3.len(P0toP3) < EPSILON ? 0 : Math.acos(vec3.dot(P0toP3, P0toP3ProjXZ) / (vec3.len(P0toP3) * vec3.len(P0toP3ProjXZ)));
+      // console.log("cells.Inclination[cellIndex]: ", cells.Inclination[cellIndex])
 
       // @TODO: assume constant for the moment, later handle in input data
       const latitude = 47;
