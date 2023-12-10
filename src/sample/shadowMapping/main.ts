@@ -159,8 +159,8 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
 
   var weatherFolder = gui.addFolder('Weather');
   weatherFolder.open();
-  let temperatureController = weatherFolder.add(weatherParams, 'guiTemperature', -20.0, 35.0).name("Temperature");
-  let precipController = weatherFolder.add(weatherParams, 'guiPrecipitation', 0.0, 3.0).name("Precipitation").step(0.01);
+  let temperatureController = weatherFolder.add(weatherParams, 'guiTemperature', -10.0, 30.0).name("Temperature");
+  let precipController = weatherFolder.add(weatherParams, 'guiPrecipitation', 0.0, 1.5).name("Precipitation").step(0.01);
   weatherFolder.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
   // precipController = precipController.step(0.1);
 
