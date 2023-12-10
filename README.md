@@ -55,7 +55,10 @@ We create a terrain mesh using data from uploaded .tiff files (uploading coming 
 ![Terrain Mesh](img/terrain.png)
 
 ### Distanced Fog
-We added distanced fog in our fragment shader to make it more realistic. We added gui parameter for our viewers to change fog distance thereby enhancing interactivity and user engagement.
+We added distanced fog in our fragment shader to make it more realistic. We added gui parameters for our viewers to change fog distance thereby enhancing interactivity and user engagement.
+
+### Skybox
+We created a separate rendering pipeline for cube maps based skybox, and integrated it into our main.ts. 
 
 ### Compute Shader: Snow Accumulation
 Using physically-based variables such as inclination, aspect, temperature, and precipitation data, our compute pipeline runs the three stages of snow accumulation described above: snow fall, snow melt, and snow redistribution. 
