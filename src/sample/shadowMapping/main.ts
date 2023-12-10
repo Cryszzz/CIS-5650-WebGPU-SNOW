@@ -7,7 +7,7 @@ import { getSquareMesh} from '../../meshes/square';
 import { WASDCamera, cameraSourceInfo } from './camera';
 import { createInputHandler, inputSourceInfo } from './input';
 import { getWeatherData } from './weather';
-import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours, getNumHoursPassed, getNumDaysPassed} from '../../meshes/utils';
+import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours, getNumHoursPassed, getNumDaysPassed, getMin} from '../../meshes/utils';
 import { computeSnowCPU } from './snowCompute';
 import { max } from 'wgpu-matrix/dist/2.x/vec2-impl';
 import { getHeightData, numberArray } from '../../meshes/geotiff-utils';
@@ -54,6 +54,8 @@ function resetTerrainBufferMapping(device, cellArray, cellBuffer)
   );
 }
 
+
+
 const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
  
   const adapter = await navigator.gpu.requestAdapter();
@@ -68,7 +70,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
 
   // Camera initialization
   let camera = setCamera();
-  let guiTemperature = 0.0;
+  let guiTemperature = 8.0;
   let guiPrecipitation = 0.0;
 
   const resetParams: any = 
@@ -100,11 +102,11 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     tMeltB: -2.0,
     k_e: 0.2,
     k_m: 4.0,
-    meltFactor: 2.0,
+    meltFactor: 3.6,
     timesteps: 0.0,
     currentSimulationStep: 0.0,
     hourOfDay: 12.0,
-    dayOfYear: 251.0,
+    dayOfYear: 251.0, // TODO: pre-defined weather values for a year simulation
   }
 
   const sizeParams = 
@@ -113,13 +115,51 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     gridSize: 0.1,
   }
 
+  const terrainOptions = {
+    k2Terrain: {
+      configurationParams: {
+        posNormalizeFactor: 5000000.0,
+        posMax: 150.0,
+        colorMaxScaleFactor: 0.64,
+        areaScaleFactor: 100.0,
+        r_i_tScaleFactor: 0.82,
+        meltFactor: 3.6,
+        maxSWE: 250000.0,
+        heightMul: 0.01,
+        gridSize: 0.1,
+        terrainSkip: 3,
+        terrainDataNormalizeFactor: 3,
+        temperatureLapseNormalizeFactor: 20.0,
+        precipitationLapseNormalizeFactor: 20.0,
+        defaultTemperature: 8.0,
+      }
+    },
+    everestTerrain: {
+      configurationParams: {
+
+      }
+    },
+    test1Terrain: {
+      configurationParams: {
+
+      }
+    },
+    test2Terrain: {
+      configurationParams: {
+
+      }
+    }
+  };
+  
+  let activeTerrain = terrainOptions.k2Terrain;
+
   var resetFolder = gui.addFolder('Reset');
   resetFolder.open();
   resetFolder.add(resetParams, 'resetCamera').name("Reset Camera");
 
   var weatherFolder = gui.addFolder('Weather');
   weatherFolder.open();
-  let temperatureController = weatherFolder.add(weatherParams, 'guiTemperature', -50.0, 70.0).name("Temperature");
+  let temperatureController = weatherFolder.add(weatherParams, 'guiTemperature', -20.0, 35.0).name("Temperature");
   let precipController = weatherFolder.add(weatherParams, 'guiPrecipitation', 0.0, 3.0).name("Precipitation").step(0.01);
   weatherFolder.add(weatherParams, 'useGuiWeather').name("Use Gui Weather");
   // precipController = precipController.step(0.1);
@@ -146,7 +186,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
 
   var sizeFolder = gui.addFolder('Size');
   sizeFolder.open();
-  sizeFolder.add(sizeParams, 'heightMul', 0.0, 1.0).name("Height Multiplier").step(0.01);
+  sizeFolder.add(sizeParams, 'heightMul', 0.0, 0.1).name("Height Multiplier").step(0.002);
   sizeFolder.add(sizeParams, 'gridSize', 0.0, 1.0).name("Grid Size").step(0.01);
 
 
@@ -172,7 +212,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   const smesh=await getSquareMesh();
   const terrainCells = await getTerrainCells(mesh);
   console.log(terrainCells.Size);
-  
+  const minAltitude = getMin(terrainCells.Altitude);
 
   const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
                                   9 * mesh.width + 16, 9 * mesh.width + 17, 9 * mesh.width + 18,
@@ -248,7 +288,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   // not typescript lol..
   resetParams.resetSimulation = function() {
     weatherParams.guiPrecipitation = 0.0;
-    weatherParams.guiTemperature = 0.0;
+    weatherParams.guiTemperature = 8.0;
     precipController.updateDisplay();
     temperatureController.updateDisplay();
     resetTerrainBufferMapping(device, cellArray, cellBuffer);
@@ -660,7 +700,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       simulationUBOBuffer,
       0,
       new Float32Array([
-        constantsParams.measurementAltitude,
+        minAltitude,
         constantsParams.tSnowA,
         constantsParams.tSnowB,
         constantsParams.tMeltA,

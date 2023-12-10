@@ -128,14 +128,15 @@ export function computeSnowCPU(cells, constantsParams, temperature?, precipitati
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
     var stationAltitudeOffset:number = cells.Altitude[idx] - constantsParams.measurementAltitude;
-    var temperatureLapse:number = - (0.5 * stationAltitudeOffset) / (100.0 * 100.0);
+    var temperatureLapse:number = - (0.5 * stationAltitudeOffset) / (50.0 );
+    console.log("temperatureLapse: ", temperatureLapse, "stationAltitudeOffset: ", stationAltitudeOffset, "cells.Altitude[idx]: ", cells.Altitude[idx], "constantsParams.measurementAltitude: ", constantsParams.measurementAltitude)
 
     var tAir:number= typeof temperature !== 'undefined' ? temperature + temperatureLapse : sim_params.Temperature + temperatureLapse; // degree Celsius
 
-    var precipitationLapse:number= 10.0 / 24.0 * stationAltitudeOffset / (100.0 * 1000.0);
+    var precipitationLapse:number= 10.0 / 24.0 * stationAltitudeOffset / (50.0);
         // const precipitationLapse: number = 0;
     var precipitationNum:number = typeof precipitation !== 'undefined' ? precipitation : sim_params.Precipitation;
-    console.log("precipitationNum: ", precipitationNum);
+    console.log("precipitationNum: ", precipitationNum, "precipitationLapse: ", precipitationLapse, "tAir: ", tAir, "temperature: ", temperature, "temperatureLapse: ", temperatureLapse, "stationAltitudeOffset: ", stationAltitudeOffset, "cells.Altitude[idx]: ", cells.Altitude[idx], "constantsParams.measurementAltitude: ", constantsParams.measurementAltitude);
     cells.DaysSinceLastSnowfall[idx] += 1.0 / 24.0;
 
       // Apply precipitation
@@ -152,9 +153,9 @@ export function computeSnowCPU(cells, constantsParams, temperature?, precipitati
             // Variable lapse rate as described in "A variable lapse rate snowline model for the Remarkables, Central Otago, New Zealand"
             var snowRate:number= Math.max(0.0, 1.0 - (tAir - constantsParams.tSnowA) / (constantsParams.tSnowB - constantsParams.tSnowA));
 
-            console.log("snow rate: ", snowRate, "areaSquareMeters: ", areaSquareMeters, "precipitationNum: ", precipitationNum, "snow water equivalent: ", cells.SnowWaterEquivalent[idx]);
+            // console.log("snow rate: ", snowRate, "areaSquareMeters: ", areaSquareMeters, "precipitationNum: ", precipitationNum, "snow water equivalent: ", cells.SnowWaterEquivalent[idx]);
             cells.SnowWaterEquivalent[idx] += (precipitationNum * areaSquareMeters * snowRate); // l/m^2 * m^2 = l
-            console.log("snow water equivalent with precip: ", cells.SnowWaterEquivalent[idx])
+            // console.log("snow water equivalent with precip: ", cells.SnowWaterEquivalent[idx])
             cells.SnowAlbedo[idx] = 0.8; // New snow sets the albedo to 0.8
         }
     }
@@ -172,9 +173,9 @@ export function computeSnowCPU(cells, constantsParams, temperature?, precipitati
             var dayNormalization: number = 1.0 / 24.0; // day made it 1
 
             // Radiation Index
-            console.log("inclination: ", cells.Inclination[idx], "aspect: ", cells.Aspect[idx], "latitude: ", cells.Latitude[idx], "day of year: ", constantsParams.dayOfYear);
+            // console.log("inclination: ", cells.Inclination[idx], "aspect: ", cells.Aspect[idx], "latitude: ", cells.Latitude[idx], "day of year: ", constantsParams.dayOfYear);
             var output = SolarRadiationIndex(cells.Inclination[idx],cells.Aspect[idx], cells.Latitude[idx], constantsParams.dayOfYear); // 1
-            console.log("output: ", output);
+            // console.log("output: ", output);
             var r_i:number=output[2];
             var T4: number=output[0];
             var T5: number=output[1];
@@ -183,14 +184,14 @@ export function computeSnowCPU(cells, constantsParams, temperature?, precipitati
             var t: number = constantsParams.hourOfDay;
             var D: number = Math.abs(T4) + Math.abs(T5);
             var r_i_t: number = Math.max(Math.abs(Math.PI * r_i / 2.0 * Math.sin(Math.PI * t / D - Math.abs(T4) / Math.PI)), 0.0);
-            console.log("r_i_t: ", r_i_t, "t: ", t, "D: ", D, "T4: ", T4, "T5: ", T5)
+            // console.log("r_i_t: ", r_i_t, "t: ", t, "D: ", D, "T4: ", T4, "T5: ", T5)
             //var r_i_t: number =5.0;
             // Melt factor
             // @TODO melt factor test
             var vegetationDensity: number = 0.0;
             var k_v: number = Math.exp(-4.0 * vegetationDensity); // 1
             var c_m: number = constantsParams.k_m * k_v * r_i_t * (1.0 - cells.SnowAlbedo[idx]) * dayNormalization * areaSquareMeters; // l/m^2/C�/day * day * m^2 = l/m^2 * 1/day * day * m^2 = l/C�
-            console.log("c_m: ", c_m, "k_v: ", k_v, "r_i_t: ", r_i_t, "snow albedo: ", cells.SnowAlbedo[idx], "dayNormalization: ", dayNormalization, "areaSquareMeters: ", areaSquareMeters);
+            // console.log("c_m: ", c_m, "k_v: ", k_v, "r_i_t: ", r_i_t, "snow albedo: ", cells.SnowAlbedo[idx], "dayNormalization: ", dayNormalization, "areaSquareMeters: ", areaSquareMeters);
             var meltFactor: number;
             if(tAir < constantsParams.tMeltB){
                 meltFactor= constantsParams.meltFactor * (tAir - constantsParams.tMeltA) * (tAir - constantsParams.tMeltA) / (constantsParams.tMeltB - constantsParams.tMeltA);
@@ -199,7 +200,7 @@ export function computeSnowCPU(cells, constantsParams, temperature?, precipitati
             }
 
             var m: number = c_m * meltFactor; // l/C� * C� = l
-            console.log("c_m: ", c_m, "meltFactor: ", meltFactor, "melt amount: ", m);
+            // console.log("c_m: ", c_m, "meltFactor: ", meltFactor, "melt amount: ", m);
             // Apply melt
             cells.SnowWaterEquivalent[idx] -= m;
             console.log("snow water equivalent after melt: ", cells.SnowWaterEquivalent[idx]);

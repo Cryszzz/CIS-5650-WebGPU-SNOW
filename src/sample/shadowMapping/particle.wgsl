@@ -175,32 +175,18 @@ fn vs_main(in : VertexInput,
   // Calculate displacement from snow
   var fragDim=vec2<i32>(textureDimensions(fragtexture).xy);
   var fragCoord : vec2<i32>=vec2<i32>(0,0);
-  fragCoord.x=i32(f32(coord.x) / f32(textDim.x) * f32(fragDim.x)); // TODO: What should be uv for the overall grid?
-  fragCoord.y=i32(f32(coord.y) / f32(textDim.y) * f32(fragDim.y)); // TODO: What should be uv for the overall grid? 
-
-  // fragCoord.x=i32(in.uv.x); // TODO: What should be uv for the overall grid?
-  // fragCoord.y=i32(in.uv.y); // TODO: What should be uv for the overall grid? 
-
-  // // Calculate fragment coordinates based on the current cell index (coord)
-  // fragCoord.x = i32(f32(fragDim.x) * (f32(coord.x) + 0.5) / f32(textDim.x - 1));
-  // fragCoord.y = i32(f32(fragDim.y) * (f32(coord.y) + 0.5) / f32(textDim.y - 1));
-
-  // // Ensure that fragCoord is within the valid range for the fragtexture dimensions
-  // fragCoord.x = clamp(fragCoord.x, 0, fragDim.x - 1);
-  // fragCoord.y = clamp(fragCoord.y, 0, fragDim.y - 1);
+  fragCoord.x=i32(f32(coord.x) / f32(textDim.x) * f32(fragDim.x)); 
+  fragCoord.y=i32(f32(coord.y) / f32(textDim.y) * f32(fragDim.y));  
 
   var testcolor = textureLoad(fragtexture, fragCoord.xy, 0); 
   var testColorFirst = testcolor / 5000000.0;
-  var testColorMax = clamp(testColorFirst * 1500, vec4(0.0), vec4(150.0)); // change these values so that they can be multiplied by render_params.heightMul
-  // var testColorMax = clamp(vec4<f32>(f32((coord.x / (textDim.x)) * fragDim.x), f32((coord.y / (textDim.y)) * fragDim.y), 0.0, 1.0), vec4<f32>(0.0), vec4<f32>(1.0));
+  var testColorMax = clamp(testColorFirst * 150.0 * 10.0, vec4(0.0), vec4(150.0)); // change these values so that they can be multiplied by render_params.heightMul
   let cellOffset = vec2<f32>(cell-textDim/2)*grid;
   var gridPos:vec2<f32> = (in.position.xz) * (grid/2.0) + cellOffset;
   
   var height:f32=textureLoad(heighttexture,coord,0).x;
   out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,(height + testColorMax.x)*render_params.heightMul,gridPos.y, 1.0);
   out.position=vec3<f32>(gridPos.x,(height + testColorMax.x)*render_params.heightMul,gridPos.y);
-  // out.Position = render_params.modelViewProjectionMatrix * vec4<f32>(gridPos.x,f32(f32(coord.y) / 10),gridPos.y, 1.0);
-  // out.position = vec3<f32>(gridPos.x,f32(f32(coord.y) / 10),gridPos.y);
   out.normal =normal;
   out.uv = vec2<f32>(f32(coord.x)/f32(textDim.x),f32(coord.y)/f32(textDim.y));
   return out;
@@ -239,8 +225,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
 
   // this should be maxSnow[0] instead of maxSnow[0] * 0.4, but leaving it here until debugged
   // var testColorMaxFirst = clamp(testcolor / (f32(maxSnow[0]) * 0.35), vec4(0.0), vec4(1.0));
-  var testColorMaxFirst = testcolor / (f32(maxSnow[0]) * 0.53);
-  var testColorMaxScaled = testColorMaxFirst * 0.75 + 0.20;
+  var testColorMaxFirst = testcolor / (f32(maxSnow[0]) * 0.64);
+  var testColorMaxScaled = select(testColorMaxFirst * 1.75, testColorMaxFirst * 0.75 + 0.20, testColorMaxFirst.x > 0.2); 
   var testcolorMax = clamp(testColorMaxScaled, vec4(0.0), vec4(1.0));
   // var out_color = testcolorMax;
   // var out_color = testcolor;
@@ -329,12 +315,12 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
     var stationAltitudeOffset:f32 = celldata.Altitude - simParams.simulationCSConstants.MeasurementAltitude;
-    var temperatureLapse:f32 = - (0.5 * stationAltitudeOffset) / (100.0 * 100.0);
+    var temperatureLapse:f32 = - (0.5 * stationAltitudeOffset) / (20.0);
 
     var tAir:f32= simParams.temperature + temperatureLapse; // degree Celsius
     // var tAir:f32= simParams.temperature;
 
-    var precipitationLapse:f32= 10.0 / 24.0 * stationAltitudeOffset / (100.0 * 1000.0);
+    var precipitationLapse:f32= 10.0 / 24.0 * stationAltitudeOffset / (20.0);
         // const precipitationLapse: number = 0;
     var precipitation:f32 = simParams.precipitation;
 
@@ -383,18 +369,15 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             var t: f32 = simParams.simulationCSVariables.HourOfDay;
             var D: f32 = abs(T4) + abs(T5);
             var r_i_t: f32 = max(abs(PI * r_i / 2.0 * sin(PI * f32(t) / D - abs(T4) / PI)) * 0.82, 0.0);
-            // var r_i_t: f32 =5.0;
             // Melt factor
-            // @TODO melt factor test
-            // r_i_t = r_i_t * 0.01;
             var vegetationDensity: f32 = 0.0;
             var k_v: f32 = exp(-4.0 * vegetationDensity); // 1
             var c_m: f32 = simParams.simulationCSConstants.k_m * k_v * r_i_t * (1.0 - celldata.SnowAlbedo) * dayNormalization * areaSquareMeters; // l/m^2/C�/day * day * m^2 = l/m^2 * 1/day * day * m^2 = l/C�
             var meltFactor: f32;
             if(tAir < simParams.simulationCSConstants.TMeltB){
-              // do sosmething with abs of difference between A
-                meltFactor=simParams.simulationCSConstants.meltFactor * (tAir - simParams.simulationCSConstants.TMeltA) * (tAir - simParams.simulationCSConstants.TMeltA) / (simParams.simulationCSConstants.TMeltB - simParams.simulationCSConstants.TMeltA);
-            }else{
+              // do something with abs of difference between A
+                meltFactor=simParams.simulationCSConstants.meltFactor * (tAir - simParams.simulationCSConstants.TMeltA + 0.01) * (tAir - simParams.simulationCSConstants.TMeltA + 0.01) / (simParams.simulationCSConstants.TMeltB - simParams.simulationCSConstants.TMeltA);
+            } else {
                 meltFactor=simParams.simulationCSConstants.meltFactor * (tAir - simParams.simulationCSConstants.TMeltA);
             }
 
@@ -403,16 +386,16 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             output_color_debug = r_i ;
             // Apply melt
             celldata.SnowWaterEquivalent -= m;
-            celldata.SnowWaterEquivalent = clamp(celldata.SnowWaterEquivalent, 0, 150000.0 * celldata.AreaXY);
         }
     }
+    celldata.SnowWaterEquivalent = clamp(celldata.SnowWaterEquivalent, 0, 250000.0 * celldata.AreaXY);
     var slope = degrees(celldata.Inclination);
     var f = select(slope / 60, 0, slope < 15.0);
     // var f = select(0, slope / 60, slope < 15.0);
 	  var a3 = 50.0;
 
     // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f);
-    celldata.InterpolatedSWE = clamp(celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature), 0.0, 150000.0 * celldata.AreaXY);
+    celldata.InterpolatedSWE = clamp(celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature), 0.0, 250000.0 * celldata.AreaXY);
     // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent;
     //celldata.Curvature-=0.001;
     data.cells[idx] = celldata;
