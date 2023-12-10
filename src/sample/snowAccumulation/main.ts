@@ -75,7 +75,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   let camera = setCamera();
   let guiPrecipitation = 0.0;
 
-  const resetParams: any = 
+  const resetParams = 
   {
     resetCamera() {
       camera = setCamera();
