@@ -158,6 +158,10 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   resetFolder.open();
   resetFolder.add(resetParams, 'resetCamera').name("Reset Camera");
 
+  var terrainFolder = gui.addFolder('Terrain');
+  terrainFolder.open();
+  
+
   var weatherFolder = gui.addFolder('Weather');
   weatherFolder.open();
   let temperatureController = weatherFolder.add(weatherParams, 'guiTemperature', -10.0, 30.0).name("Temperature");
