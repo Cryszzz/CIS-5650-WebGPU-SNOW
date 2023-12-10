@@ -22,6 +22,7 @@ module.exports = {
     "@typescript-eslint/no-var-requires" : "off",
     "@typescript-eslint/no-inferrable-types" : "off",
     "@typescript-eslint/no-unused-vars" : "off",
+    "@typescript-eslint/no-explicit-any" : "off",
   },
   globals: {
     React: "writable"

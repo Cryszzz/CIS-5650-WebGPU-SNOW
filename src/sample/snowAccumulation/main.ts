@@ -75,7 +75,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   let camera = setCamera();
   let guiPrecipitation = 0.0;
 
-  const resetParams = 
+  const resetParams: any = 
   {
     resetCamera() {
       camera = setCamera();
@@ -720,10 +720,10 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
-  let simulationFolder = gui.addFolder('Simulation');
-  Object.keys(simulationParams).forEach((k) => {
-    simulationFolder.add(simulationParams, k);
-  });
+  // let simulationFolder = gui.addFolder('Simulation');
+  // Object.keys(simulationParams).forEach((k) => {
+  //   simulationFolder.add(simulationParams, k);
+  // });
 
   const computePipeline = device.createComputePipeline({
     layout: 'auto',
