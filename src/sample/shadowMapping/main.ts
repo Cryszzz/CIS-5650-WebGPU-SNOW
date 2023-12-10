@@ -1,6 +1,6 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
-import { renderSkybox } from './skyboxPipeline';
+//import { renderSkybox } from './skyboxPipeline';
 import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../../meshes/cube';
 import basicVertWGSL from '../../shaders/basic.vert.wgsl';
 
@@ -18,7 +18,7 @@ import { max } from 'wgpu-matrix/dist/2.x/vec2-impl';
 import { getHeightData, numberArray } from '../../meshes/geotiff-utils';
 
 
-async function createSkyboxPipeline(device, presentationFormat)  {
+/*async function createSkyboxPipeline(device, presentationFormat)  {
   return device.createRenderPipeline({
       layout: 'auto',
       vertex: {
@@ -84,6 +84,7 @@ async function loadCubemapTexture(device) {
 
 return cubemapTexture;
 }
+*/
 const numParticles = 0;
 const particlePositionOffset = 0;
 const particleColorOffset = 4 * 4;
@@ -219,7 +220,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     });
     console.log(skyboxUniformBindGroup);
   */
- 
+
   context.configure({
     device,
     format: presentationFormat,
