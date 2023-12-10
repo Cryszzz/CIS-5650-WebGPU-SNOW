@@ -1,8 +1,8 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
-import { renderSkybox } from '../../meshes/skyboxPipeline';
+import { renderSkybox } from './skyboxPipeline';
 import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../../meshes/cube';
-import { createSkyboxPipeline, loadCubemapTexture } from '../../meshes/skyboxPipeline';
+import basicVertWGSL from '../../shaders/basic.vert.wgsl';
 
 
 import particleWGSL from './particle.wgsl';
@@ -17,6 +17,73 @@ import { computeSnowCPU } from './snowCompute';
 import { max } from 'wgpu-matrix/dist/2.x/vec2-impl';
 import { getHeightData, numberArray } from '../../meshes/geotiff-utils';
 
+
+async function createSkyboxPipeline(device, presentationFormat)  {
+  return device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+          module: device.createShaderModule({ code: basicVertWGSL }),
+          entryPoint: 'vs_main',
+          buffers: [{
+              arrayStride: cubeVertexSize,
+              attributes: [
+                  { shaderLocation: 0, offset: cubePositionOffset, format: 'float32x4' },
+                  { shaderLocation: 1, offset: cubeUVOffset, format: 'float32x2' },
+              ],
+          }],
+      },
+      fragment: {
+          module: device.createShaderModule({ code: basicVertWGSL }),
+          entryPoint: 'fs_main',
+          targets: [{ format: presentationFormat }],
+      },
+      primitive: {
+          topology: 'triangle-list',
+          cullMode: 'none',
+      },
+      depthStencil: {
+          depthWriteEnabled: true,
+          depthCompare: 'less',
+          format: 'depth24plus-stencil8',
+      },
+  });
+}
+
+// Function to load and create cubemap texture
+async function loadCubemapTexture(device) {
+  const imgSrcs = [
+      '../assets/img/cubemap/posx.jpg',
+      '../assets/img/cubemap/negx.jpg',
+      '../assets/img/cubemap/posy.jpg',
+      '../assets/img/cubemap/negy.jpg',
+      '../assets/img/cubemap/posz.jpg',
+      '../assets/img/cubemap/negz.jpg',
+  ];
+
+  const promises = imgSrcs.map(async (src) => {
+    const response = await fetch(src);
+    return createImageBitmap(await response.blob());
+  });
+  const imageBitmaps = await Promise.all(promises);
+
+  var cubemapTexture: GPUTexture;
+  cubemapTexture = device.createTexture({
+      dimension: '2d',
+      size: [imageBitmaps[0].width, imageBitmaps[0].height, 6],
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+  for (let i = 0; i < imageBitmaps.length; i++) {
+    const imageBitmap = imageBitmaps[i];
+    device.queue.copyExternalImageToTexture(
+      { source: imageBitmap },
+      { texture: cubemapTexture, origin: [0, 0, i] },
+      [imageBitmap.width, imageBitmap.height]
+    );
+}
+
+return cubemapTexture;
+}
 const numParticles = 0;
 const particlePositionOffset = 0;
 const particleColorOffset = 4 * 4;
