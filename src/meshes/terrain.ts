@@ -6,8 +6,8 @@ import { vec3, glMatrix, vec2 } from 'gl-matrix';
 var imgText: number[] = [0, 0];
 const EPSILON = 0.00001;
 
-async function loadAndUseHeightData() {
-    const url = '../assets/img/file/k2-h.tif';
+async function loadAndUseHeightData(terrainFile) {
+    const url = terrainFile;
     // const url = '../assets/img/file/test2.tif';
     const heightData = await getHeightData(url);
     imgText[0] = numberArray[0];
@@ -17,12 +17,12 @@ async function loadAndUseHeightData() {
     return heightData;
 }
 
-async function generateTerrainMesh() {
-    const heightData = await loadAndUseHeightData();
+async function generateTerrainMesh(terrainFile, terrainSkip, terrainDataNormalizeFactor) {
+    const heightData = await loadAndUseHeightData(terrainFile);
     const width = imgText[0]; // TODO: may have to swap this
     const height = imgText[1]; // TODO: may have to swap this
     const gridSpacing = 1;
-    const skip=3;
+    const skip=terrainSkip;
     const verticesPerRow = Math.floor(width/skip); // height = verticesPerRow
     const verticesPerColumn = Math.floor(height/skip); //width = verticesPerColumn
     console.log("verticesPerRow"+verticesPerRow );
@@ -33,7 +33,7 @@ async function generateTerrainMesh() {
         for (let x = 0; x <verticesPerRow*skip; x+=skip) {
           // console.log(`x: ${x}, z: ${z}, heightData[z*width+x]: ${heightData[z*width+x]}`);
           const data=heightData[z*width+x];
-          positions.push([(x - width / 2)*gridSpacing, data/10, (z - height / 2)*gridSpacing]);
+          positions.push([(x - width / 2)*gridSpacing, data/terrainDataNormalizeFactor, (z - height / 2)*gridSpacing]);
         }
     }
 
@@ -47,8 +47,8 @@ async function generateTerrainMesh() {
 }
 
 // Export the function that generates the terrain mesh
-export async function getTerrainMesh() {
-    return await generateTerrainMesh();
+export async function getTerrainMesh(terrainFile, terrainSkip, terrainDataNormalizeFactor) {
+    return await generateTerrainMesh(terrainFile, terrainSkip, terrainDataNormalizeFactor);
 }
 
 const normalizeAngle360 = (A: number) => {

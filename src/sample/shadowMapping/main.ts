@@ -55,7 +55,6 @@ function resetTerrainBufferMapping(device, cellArray, cellBuffer)
 }
 
 
-
 const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
  
   const adapter = await navigator.gpu.requestAdapter();
@@ -70,7 +69,6 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
 
   // Camera initialization
   let camera = setCamera();
-  let guiTemperature = 8.0;
   let guiPrecipitation = 0.0;
 
   const resetParams: any = 
@@ -80,9 +78,60 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     },
   };
 
+  const terrainOptions = {
+    k2Terrain: {
+      name: "K2",
+      terrainFilename: "../assets/img/file/k2-h.tif",
+      textureFilename: "../assets/img/file/k2-t.png",
+      configurationParams: {
+        posNormalizeFactor: 5000000.0, //done
+        posMax: 150.0, //done
+        colorMaxScaleFactor: 0.64, //done
+        areaScaleFactor: 100.0, //done
+        r_i_tScaleFactor: 0.82, //done
+        k_mScaleFactor: 2.5, //done
+        meltFactor: 5.5, //done
+        maxSWE: 250000.0, //done
+        temperatureLapseNormalizeFactor: 20.0, //done
+        precipitationLapseNormalizeFactor: 20.0, //done
+        heightMul: 0.01, //done
+        gridSize: 0.1, //done
+        terrainSkip: 3, //done
+        terrainDataNormalizeFactor: 10.0, //done
+        defaultTemperature: 8.0, //done
+      }
+    },
+    everestTerrain: {
+      name: "Everest",
+      terrainFilename: "../assets/img/file/everest.tif",
+      textureFilename: "../assets/img/file/rock.png",
+      configurationParams: {
+        posNormalizeFactor: 5000000.0,
+        posMax: 150.0,
+        colorMaxScaleFactor: 0.64,
+        areaScaleFactor: 100.0,
+        r_i_tScaleFactor: 0.82,
+        k_mScaleFactor: 2.0,
+        meltFactor: 6.1,
+        maxSWE: 250000.0,
+        temperatureLapseNormalizeFactor: 20.0,
+        precipitationLapseNormalizeFactor: 20.0,
+        heightMul: 0.01, 
+        gridSize: 0.1, 
+        terrainSkip: 3,
+        terrainDataNormalizeFactor: 10.0,
+        defaultTemperature: 8.0,
+      }
+    },
+  };
+
+  const terrainParams = {
+    terrain: terrainOptions.k2Terrain,
+  }
+
   const weatherParams = 
   {
-    guiTemperature: guiTemperature,
+    guiTemperature: terrainParams.terrain.configurationParams.defaultTemperature,
     guiPrecipitation: guiPrecipitation,
     useGuiWeather: true,
   }
@@ -101,8 +150,8 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     tMeltA: -5.0,
     tMeltB: -2.0,
     k_e: 0.2,
-    k_m: 4.0,
-    meltFactor: 3.6,
+    k_m: terrainParams.terrain.configurationParams.k_mScaleFactor,
+    meltFactor: terrainParams.terrain.configurationParams.meltFactor,
     timesteps: 0.0,
     currentSimulationStep: 0.0,
     hourOfDay: 12.0,
@@ -111,60 +160,20 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
 
   const sizeParams = 
   {
-    heightMul: 0.01,
-    gridSize: 0.1,
+    heightMul: terrainParams.terrain.configurationParams.heightMul,
+    gridSize: terrainParams.terrain.configurationParams.gridSize,
   }
 
-  const terrainOptions = {
-    k2Terrain: {
-      configurationParams: {
-        posNormalizeFactor: 5000000.0,
-        posMax: 150.0,
-        colorMaxScaleFactor: 0.64,
-        areaScaleFactor: 100.0,
-        r_i_tScaleFactor: 0.82,
-        k_mScaleFactor: 2.0,
-        meltFactor: 6.1,
-        maxSWE: 250000.0,
-        heightMul: 0.01,
-        gridSize: 0.1,
-        terrainSkip: 3,
-        terrainDataNormalizeFactor: 3,
-        temperatureLapseNormalizeFactor: 20.0,
-        precipitationLapseNormalizeFactor: 20.0,
-        defaultTemperature: 8.0,
-      }
-    },
-    everestTerrain: {
-      configurationParams: {
-
-      }
-    },
-    test1Terrain: {
-      configurationParams: {
-
-      }
-    },
-    test2Terrain: {
-      configurationParams: {
-
-      }
-    }
-  };
-
-  const terrainParams = {
-    terrain: "k2",
-  }
-  
   let activeTerrain = terrainOptions.k2Terrain;
+
 
   var resetFolder = gui.addFolder('Reset');
   resetFolder.open();
-  resetFolder.add(resetParams, 'resetCamera', ['k2', 'everest']).name("Reset Camera");
+  resetFolder.add(resetParams, 'resetCamera').name("Reset Camera");
 
   var terrainFolder = gui.addFolder('Terrain');
   terrainFolder.open();
-  terrainFolder.add(terrainParams, 'terrain').name("Select Terrain");
+
 
   var weatherFolder = gui.addFolder('Weather');
   weatherFolder.open();
@@ -217,10 +226,13 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
 
   
 
-  const mesh=await getTerrainMesh();
+  let mesh=await getTerrainMesh(terrainParams.terrain.terrainFilename, terrainParams.terrain.configurationParams.terrainSkip, terrainParams.terrain.configurationParams.terrainDataNormalizeFactor);
   const smesh=await getSquareMesh();
-  const terrainCells = await getTerrainCells(mesh);
+  let terrainCells = await getTerrainCells(mesh);
   console.log(terrainCells.Size);
+
+
+  // TODO: replace with a value in terrain mesh itself
   const minAltitude = getMin(terrainCells.Altitude);
 
   const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
@@ -294,10 +306,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     ],i*12);
   }
 
-  // not typescript lol..
   resetParams.resetSimulation = function() {
     weatherParams.guiPrecipitation = 0.0;
-    weatherParams.guiTemperature = 8.0;
+    weatherParams.guiTemperature = terrainParams.terrain.configurationParams.defaultTemperature;
     precipController.updateDisplay();
     temperatureController.updateDisplay();
     resetTerrainBufferMapping(device, cellArray, cellBuffer);
@@ -420,31 +431,35 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     4 + // padding
     3 * 4 + // up : vec3<f32>
     4 + // heightMul
+    8 * 4 + //configurationCS
     0;
   const uniformBuffer = device.createBuffer({
     size: uniformBufferSize,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
-  let cubeTexture: GPUTexture;
-  {
-    const response = await fetch('../assets/img/file/k2-t.png');
-    // const response = await fetch('../assets/img/Di-3d.png');
-    const imageBitmap = await createImageBitmap(await response.blob());
 
-    cubeTexture = device.createTexture({
-      size: [imageBitmap.width, imageBitmap.height, 1],
-      format: 'rgba8unorm',
-      usage:
-        GPUTextureUsage.TEXTURE_BINDING |
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-    device.queue.copyExternalImageToTexture(
-      { source: imageBitmap },
-      { texture: cubeTexture },
-      [imageBitmap.width, imageBitmap.height]
-    );
-  }
+
+
+  // let cubeTexture: GPUTexture;
+  // {
+  //   const response = await fetch('../assets/img/file/k2-t.png');
+  //   // const response = await fetch('../assets/img/Di-3d.png');
+  //   const imageBitmap = await createImageBitmap(await response.blob());
+
+  //   cubeTexture = device.createTexture({
+  //     size: [imageBitmap.width, imageBitmap.height, 1],
+  //     format: 'rgba8unorm',
+  //     usage:
+  //       GPUTextureUsage.TEXTURE_BINDING |
+  //       GPUTextureUsage.COPY_DST |
+  //       GPUTextureUsage.RENDER_ATTACHMENT,
+  //   });
+  //   device.queue.copyExternalImageToTexture(
+  //     { source: imageBitmap },
+  //     { texture: cubeTexture },
+  //     [imageBitmap.width, imageBitmap.height]
+  //   );
+  // }
   /*let heightTexture: GPUTexture;
   {
     const response = await fetch('../assets/img/file/height1.png');
@@ -465,19 +480,31 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       [imageBitmap.width, imageBitmap.height]
     );
   }*/
-  
-  let heightTexture: GPUTexture;
+  async function setColorTexture(filename)
   {
-    //const response = await fetch('../assets/img/file/k2-h.tif');
-    //const response = await fetch('../assets/img/Di-3d.png');
-    //const url = '../assets/img/file/everest.tif';
-    const url = '../assets/img/file/k2-h.tif';
-    const heightData = await getHeightData(url);
+    const response = await fetch(filename);
+    const imageBitmap = await createImageBitmap(await response.blob());
+
+    let cubeTexture = device.createTexture({
+      size: [imageBitmap.width, imageBitmap.height, 1],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    return { texture: cubeTexture, image: imageBitmap };
+  }
+
+  async function setHeightTexture(filename)
+  {
+    // const url = '../assets/img/file/k2-h.tif';
+    const heightData = await getHeightData(filename);
     
     console.log("heightdata test");
     console.log("heightData: " + heightData[0]);
 
-    heightTexture = device.createTexture({
+    let heightTextureSet = device.createTexture({
       size: [numberArray[0], numberArray[1],1],
       format: "r32float",
       usage:
@@ -485,15 +512,72 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         GPUTextureUsage.COPY_DST |
         GPUTextureUsage.RENDER_ATTACHMENT,
     });
-    const arrayBuffer = new Float32Array(heightData);
-    device.queue.writeTexture(
-      { texture: heightTexture },
-      heightData,
-      {bytesPerRow:numberArray[0]*4},
-      { width: numberArray[0], height: numberArray[1] }
-    );
+    // const arrayBuffer = new Float32Array(heightData);
+    return { texture: heightTextureSet, data: heightData};
   }
-  console.log("amount of mesh:"+(heightTexture.width-1)*(heightTexture.height-1));
+  
+  // let heightTexture: GPUTexture;
+  // {
+
+  let color = await setColorTexture('../assets/img/file/k2-t.png');
+  device.queue.copyExternalImageToTexture(
+    { source: color.image },
+    { texture: color.texture },
+    [color.image.width, color.image.height]
+  );
+
+
+  let height = await setHeightTexture('../assets/img/file/k2-h.tif');
+  device.queue.writeTexture(
+    { texture: height.texture },
+    height.data,
+    {bytesPerRow:numberArray[0]*4},
+    { width: numberArray[0], height: numberArray[1] }
+  );
+
+  let heightChanged = false;
+  let colorChanged = false;
+  terrainFolder.add(terrainParams, 'terrain',Object.values(terrainOptions).map(option => option.name)).name("Select Terrain")
+  .setValue(terrainOptions.k2Terrain.name)
+  .onChange(async function (value) {
+     terrainParams.terrain = Object.values(terrainOptions).find(option => option.name === value);
+     mesh = await getTerrainMesh(terrainParams.terrain.terrainFilename, terrainParams.terrain.configurationParams.terrainSkip, terrainParams.terrain.configurationParams.terrainDataNormalizeFactor);
+     terrainCells = await getTerrainCells(mesh);
+     height = await setHeightTexture(terrainParams.terrain.terrainFilename);
+     heightChanged = true;
+     color = await setColorTexture(terrainParams.terrain.textureFilename);
+     colorChanged = true;
+     resetParams.resetSimulation();
+    });
+  // Can't get this to be set by default so doing it here
+  terrainParams.terrain = terrainOptions.k2Terrain;
+
+    // //const response = await fetch('../assets/img/file/k2-h.tif');
+    // //const response = await fetch('../assets/img/Di-3d.png');
+    // //const url = '../assets/img/file/everest.tif';
+    // const url = '../assets/img/file/k2-h.tif';
+    // const heightData = await getHeightData(url);
+    
+    // console.log("heightdata test");
+    // console.log("heightData: " + heightData[0]);
+
+    // heightTexture = device.createTexture({
+    //   size: [numberArray[0], numberArray[1],1],
+    //   format: "r32float",
+    //   usage:
+    //     GPUTextureUsage.TEXTURE_BINDING |
+    //     GPUTextureUsage.COPY_DST |
+    //     GPUTextureUsage.RENDER_ATTACHMENT,
+    // });
+    // const arrayBuffer = new Float32Array(heightData);
+    // device.queue.writeTexture(
+    //   { texture: heightTexture },
+    //   heightData,
+    //   {bytesPerRow:numberArray[0]*4},
+    //   { width: numberArray[0], height: numberArray[1] }
+    // );
+  // }
+  console.log("amount of mesh:"+(height.texture.width-1)*(height.texture.height-1));
   //heightTexture=cubeTexture;
   const uniformArray = new Float32Array([0.1, 0.1]);
   const gridBuffer = device.createBuffer({
@@ -517,7 +601,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       },
       {
         binding: 2,
-        resource: cubeTexture.createView(),
+        resource: color.texture.createView(),
       },
       {
         binding: 3,
@@ -527,7 +611,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       },
       {
         binding: 4,
-        resource: heightTexture.createView(),
+        resource: height.texture.createView(),
       },
       {
         binding: 5,
@@ -571,6 +655,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     7 * 4 + // simulationCS
     1 * 4 + // padding
     4 * 4 + // simulationCSVar
+    8 * 4 + // configurationCS
     2 * 4 + // weatherData: temp+perci
     2 * 4 + // padding
     0;
@@ -612,7 +697,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       },
       {
         binding: 2,
-        resource: cubeTexture.createView(),
+        resource: color.texture.createView(),
       },
       {
         binding: 3,
@@ -704,6 +789,26 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       //   console.log("precipitation: " + weatherData.precipitation[i * 20]);
       // }
     }
+    if (heightChanged)
+    {
+      device.queue.writeTexture(
+        { texture: height.texture },
+        height.data,
+        {bytesPerRow:numberArray[0]*4},
+        { width: numberArray[0], height: numberArray[1] }
+      );
+      heightChanged = false;
+    }
+
+    if (colorChanged)
+    {
+      device.queue.copyExternalImageToTexture(
+        { source: color.image },
+        { texture: color.texture },
+        [color.image.width, color.image.height]
+      );
+      colorChanged = false;
+    }
 
     device.queue.writeBuffer(
       simulationUBOBuffer,
@@ -721,6 +826,14 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         constantsParams.currentSimulationStep,
         constantsParams.hourOfDay,
         constantsParams.dayOfYear,
+        terrainParams.terrain.configurationParams.posNormalizeFactor,
+        terrainParams.terrain.configurationParams.posMax,
+        terrainParams.terrain.configurationParams.colorMaxScaleFactor,
+        terrainParams.terrain.configurationParams.areaScaleFactor,
+        terrainParams.terrain.configurationParams.r_i_tScaleFactor,
+        terrainParams.terrain.configurationParams.maxSWE,
+        terrainParams.terrain.configurationParams.temperatureLapseNormalizeFactor,
+        terrainParams.terrain.configurationParams.precipitationLapseNormalizeFactor,
         weatherParams.useGuiWeather ? weatherParams.guiTemperature : weatherData.temperature[0], //TODO: bind weather Data temperature per frame
         weatherParams.useGuiWeather ? weatherParams.guiPrecipitation : weatherData.precipitation[0], //TODO: bind weather Data percipitation per frame
         0.0,
@@ -763,6 +876,14 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         0, // padding
         view[1], view[5], view[9], // up
         sizeParams.heightMul, // heightMul
+        terrainParams.terrain.configurationParams.posNormalizeFactor,
+        terrainParams.terrain.configurationParams.posMax,
+        terrainParams.terrain.configurationParams.colorMaxScaleFactor,
+        terrainParams.terrain.configurationParams.areaScaleFactor,
+        terrainParams.terrain.configurationParams.r_i_tScaleFactor,
+        terrainParams.terrain.configurationParams.maxSWE,
+        terrainParams.terrain.configurationParams.temperatureLapseNormalizeFactor,
+        terrainParams.terrain.configurationParams.precipitationLapseNormalizeFactor,
       ])
     );
 
@@ -801,7 +922,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       passEncoder.setBindGroup(0, uniformBindGroup);
       passEncoder.setVertexBuffer(0, vertexBuffer);
       //passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-      passEncoder.draw(indexCount,(heightTexture.width-1)*(heightTexture.height-1));//(heightTexture.width-1)*(heightTexture.height-1)
+      passEncoder.draw(indexCount,(height.texture.width-1)*(height.texture.height-1));//(heightTexture.width-1)*(heightTexture.height-1)
       passEncoder.end();
     }
 

@@ -16,6 +16,17 @@ struct SimulationCS {
 };
 const SimulationCSConstants: SimulationCS = SimulationCS(0.0,0.0,2.0,-5.0,-2.0,0.2,4.0, 2.0);
 
+struct ConfigurationCS {
+  posNormalizeFactor: f32,
+  posMax: f32,
+  colorMaxScaleFactor: f32,
+  areaScaleFactor: f32,
+  r_i_tScaleFactor: f32,
+  maxSWE: f32,
+  temperatureLapseNormalizeFactor: f32,
+  precipitationLapseNormalizeFactor: f32,
+};
+
 struct WeatherData
 {
 	Temperature:f32,
@@ -113,6 +124,7 @@ struct RenderParams {
   right : vec3<f32>,
   up : vec3<f32>,
   heightMul : f32,
+  configurationCSVariables: ConfigurationCS,
 }
 @binding(0) @group(0) var<uniform> render_params : RenderParams;
 @binding(1) @group(0) var fragtexture : texture_2d<f32>;
@@ -179,8 +191,8 @@ fn vs_main(in : VertexInput,
   fragCoord.y=i32(f32(coord.y) / f32(textDim.y) * f32(fragDim.y));  
 
   var testcolor = textureLoad(fragtexture, fragCoord.xy, 0); 
-  var testColorFirst = testcolor / 5000000.0;
-  var testColorMax = clamp(testColorFirst * 150.0 * 10.0, vec4(0.0), vec4(150.0)); // change these values so that they can be multiplied by render_params.heightMul
+  var testColorFirst = testcolor / render_params.configurationCSVariables.posNormalizeFactor;
+  var testColorMax = clamp(testColorFirst * render_params.configurationCSVariables.posMax * 10.0, vec4(0.0), vec4(render_params.configurationCSVariables.posMax)); // change these values so that they can be multiplied by render_params.heightMul
   let cellOffset = vec2<f32>(cell-textDim/2)*grid;
   var gridPos:vec2<f32> = (in.position.xz) * (grid/2.0) + cellOffset;
   
@@ -225,7 +237,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
 
   // this should be maxSnow[0] instead of maxSnow[0] * 0.4, but leaving it here until debugged
   // var testColorMaxFirst = clamp(testcolor / (f32(maxSnow[0]) * 0.35), vec4(0.0), vec4(1.0));
-  var testColorMaxFirst = testcolor / (f32(maxSnow[0]) * 0.64);
+  var testColorMaxFirst = testcolor / (f32(maxSnow[0]) * render_params.configurationCSVariables.colorMaxScaleFactor);
   var testColorMaxScaled = select(testColorMaxFirst * 1.75, testColorMaxFirst * 0.75 + 0.20, testColorMaxFirst.x > 0.2); 
   var testcolorMax = clamp(testColorMaxScaled, vec4(0.0), vec4(1.0));
   // var out_color = testcolorMax;
@@ -245,9 +257,11 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
 ////////////////////////////////////////////////////////////////////////////////
 // Simulation Compute shader
 ////////////////////////////////////////////////////////////////////////////////
+
 struct SimulationParams {
   simulationCSConstants: SimulationCS,
   simulationCSVariables: SimulationCSVar,
+  configurationCSVariables: ConfigurationCS,
   temperature: f32,
   precipitation: f32,
 }
@@ -310,17 +324,17 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     //CRYSTAL: starting from this part, use the same code from that unreal project
     var celldata = data.cells[idx];
     
-    var areaSquareMeters:f32 = celldata.AreaXY * 100; // m^2 
+    var areaSquareMeters:f32 = celldata.AreaXY * simParams.configurationCSVariables.areaScaleFactor; // m^2 
     // var areaSquareMetersPrecip:f32 = celldata.AreaXY / 1000; // m^2
 
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
     var stationAltitudeOffset:f32 = celldata.Altitude - simParams.simulationCSConstants.MeasurementAltitude;
-    var temperatureLapse:f32 = - (0.5 * stationAltitudeOffset) / (20.0);
+    var temperatureLapse:f32 = - (0.5 * stationAltitudeOffset) / (simParams.configurationCSVariables.temperatureLapseNormalizeFactor);
 
     var tAir:f32= simParams.temperature + temperatureLapse; // degree Celsius
     // var tAir:f32= simParams.temperature;
 
-    var precipitationLapse:f32= 10.0 / 24.0 * stationAltitudeOffset / (20.0);
+    var precipitationLapse:f32= 10.0 / 24.0 * stationAltitudeOffset / (simParams.configurationCSVariables.precipitationLapseNormalizeFactor);
         // const precipitationLapse: number = 0;
     var precipitation:f32 = simParams.precipitation;
 
@@ -368,7 +382,7 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             // Diurnal approximation
             var t: f32 = simParams.simulationCSVariables.HourOfDay;
             var D: f32 = abs(T4) + abs(T5);
-            var r_i_t: f32 = max(abs(PI * r_i / 2.0 * sin(PI * f32(t) / D - abs(T4) / PI)) * 0.82, 0.0);
+            var r_i_t: f32 = max(abs(PI * r_i / 2.0 * sin(PI * f32(t) / D - abs(T4) / PI)) * simParams.configurationCSVariables.r_i_tScaleFactor, 0.0);
             // Melt factor
             var vegetationDensity: f32 = 0.0;
             var k_v: f32 = exp(-4.0 * vegetationDensity); // 1
@@ -388,14 +402,14 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
             celldata.SnowWaterEquivalent -= m;
         }
     }
-    celldata.SnowWaterEquivalent = clamp(celldata.SnowWaterEquivalent, 0, 250000.0 * celldata.AreaXY);
+    celldata.SnowWaterEquivalent = clamp(celldata.SnowWaterEquivalent, 0, simParams.configurationCSVariables.maxSWE * celldata.AreaXY);
     var slope = degrees(celldata.Inclination);
     var f = select(slope / 60, 0, slope < 15.0);
     // var f = select(0, slope / 60, slope < 15.0);
 	  var a3 = 50.0;
 
     // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f);
-    celldata.InterpolatedSWE = clamp(celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature), 0.0, 250000.0 * celldata.AreaXY);
+    celldata.InterpolatedSWE = clamp(celldata.SnowWaterEquivalent * (1 - f) * (1 + a3 * celldata.Curvature), 0.0, simParams.configurationCSVariables.maxSWE * celldata.AreaXY);
     // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent;
     //celldata.Curvature-=0.001;
     data.cells[idx] = celldata;
