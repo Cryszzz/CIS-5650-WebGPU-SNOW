@@ -1,12 +1,12 @@
 .canvasContainer {
   text-align: center;
   position: relative;
-  margin-top: 10px;
 }
 
 .canvasContainer>canvas {
   height: 100vh;
-  aspect-ratio: 1;
+  width: 100vw;
+  max-height: 100vh;
 }
 
 nav.sourceFileNav ul {

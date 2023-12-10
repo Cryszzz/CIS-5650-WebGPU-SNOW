@@ -14,7 +14,7 @@ type PageComponentType = {
 };
 
 export const pages: PageComponentType = {
-  shadowMapping: dynamic(() => import('../../sample/shadowMapping/main')),
+  snowAccumulation: dynamic(() => import('../../sample/snowAccumulation/main')),
 };
 
 function Page({ slug }: Props): JSX.Element {
