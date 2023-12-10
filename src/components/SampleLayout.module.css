@@ -6,7 +6,7 @@
 
 .canvasContainer>canvas {
   height: 100vh;
-  aspect-ratio: 1;
+  width: 100vw;
 }
 
 nav.sourceFileNav ul {

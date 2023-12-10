@@ -1,8 +1,8 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
-import { renderSkybox } from './skyboxPipeline';
+import { renderSkybox } from '../../meshes/skyboxPipeline';
 import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../../meshes/cube';
-import { createSkyboxPipeline, loadCubemapTexture } from './skyboxPipeline';
+import { createSkyboxPipeline, loadCubemapTexture } from '../../meshes/skyboxPipeline';
 
 
 import particleWGSL from './particle.wgsl';

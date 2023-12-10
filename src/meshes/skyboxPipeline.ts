@@ -1,7 +1,7 @@
 import { mat4, vec3 } from 'wgpu-matrix';
-import basicVertWGSL from '../../shaders/basic.vert.wgsl';
+import basicVertWGSL from '../shaders/basic.vert.wgsl';
 //import sampleCubemapWGSL from '../../shaders/sampleCubemap.frag.wgsl';
-import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../../meshes/cube';
+import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from './cube';
 
 // Function to create the pipeline for rendering the skybox
 export async function createSkyboxPipeline(device, presentationFormat)  {
