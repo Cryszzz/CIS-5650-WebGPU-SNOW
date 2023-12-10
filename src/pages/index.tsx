@@ -1,10 +1,10 @@
 import styles from './HomePage.module.css';
-import ShadowMapping from '../sample/shadowMapping/main';
+import SnowAccumulation from '../sample/snowAccumulation/main';
 
 const HomePage: React.FunctionComponent = () => {
   return (
     <main className={styles.homePage}>
-      <ShadowMapping/>
+      <SnowAccumulation/>
     </main>
   );
 };

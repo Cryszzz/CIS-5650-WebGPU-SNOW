@@ -98,6 +98,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   const devicePixelRatio = window.devicePixelRatio;
   canvas.width = canvas.clientWidth * devicePixelRatio;
   canvas.height = canvas.clientHeight * devicePixelRatio;
+  console.log(canvas.width+" "+canvas.height);
   const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
   
   // Setup skybox pipeline here
@@ -448,7 +449,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   }
   console.log("amount of mesh:"+(heightTexture.width-1)*(heightTexture.height-1));
   //heightTexture=cubeTexture;
-  const uniformArray = new Float32Array([0.1, 0.1]);
+  const uniformArray = new Float32Array([10.0, 10.0]);
   const gridBuffer = device.createBuffer({
     label: "Grid Uniforms",
     size: uniformArray.byteLength,
@@ -942,9 +943,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
 
 const Particles: () => JSX.Element = () =>
   makeSample({
-    name: 'Particles',
+    name: 'Snow Accumulation',
     description:
-      'This example demonstrates rendering of particles simulated with compute shaders.',
+      'This website gives a simulation of snow accumulation',
     gui: true,
     stats: true,
     init,

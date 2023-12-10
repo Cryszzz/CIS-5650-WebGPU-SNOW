@@ -177,7 +177,6 @@ const SampleLayout: React.FunctionComponent<
             __html: `
             .CodeMirror {
               height: auto !important;
-              margin: 1em 0;
             }
 
             .CodeMirror-scroll {
@@ -187,7 +186,7 @@ const SampleLayout: React.FunctionComponent<
           `,
           }}
         />
-        <title>{`${props.name} - WebGPU Samples`}</title>
+        <title>{`${props.name}`}</title>
         <meta name="description" content={props.description} />
         <meta httpEquiv="origin-trial" content={props.originTrial} />
       </Head>
