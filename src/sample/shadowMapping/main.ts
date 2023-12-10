@@ -1,6 +1,6 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { makeSample, SampleInit } from '../../components/SampleLayout';
-//import { renderSkybox } from './skyboxPipeline';
+import { renderSkybox } from './skyboxPipeline';
 import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../../meshes/cube';
 import basicVertWGSL from '../../shaders/basic.vert.wgsl';
 
@@ -18,7 +18,7 @@ import { max } from 'wgpu-matrix/dist/2.x/vec2-impl';
 import { getHeightData, numberArray } from '../../meshes/geotiff-utils';
 
 
-/*async function createSkyboxPipeline(device, presentationFormat)  {
+async function createSkyboxPipeline(device, presentationFormat)  {
   return device.createRenderPipeline({
       layout: 'auto',
       vertex: {
@@ -80,11 +80,11 @@ async function loadCubemapTexture(device) {
       { texture: cubemapTexture, origin: [0, 0, i] },
       [imageBitmap.width, imageBitmap.height]
     );
+  }
+
+  return cubemapTexture;
 }
 
-return cubemapTexture;
-}
-*/
 const numParticles = 0;
 const particlePositionOffset = 0;
 const particleColorOffset = 4 * 4;
@@ -173,7 +173,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   // Initialize the skybox pipeline
   //const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
-  /*
+  
     // Initialize the skybox pipeline
     const skyboxPipeline = await createSkyboxPipeline(device, presentationFormat);
 
@@ -219,7 +219,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       ],
     });
     console.log(skyboxUniformBindGroup);
-  */
+  
 
   context.configure({
     device,
@@ -995,7 +995,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       passEncoder.draw(6,(heightTexture.width-1)*(heightTexture.height-1));//(heightTexture.width-1)*(heightTexture.height-1)
       // passEncoder.setIndexBuffer(indexBuffer, 'uint16');
       // passEncoder.drawIndexed(indexCount);
-      //renderSkybox(device, skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup,passEncoder,cameraViewProj);
+      renderSkybox(device, skyboxPipeline, skyboxVerticesBuffer, skyboxUniformBuffer, skyboxUniformBindGroup,passEncoder,cameraViewProj);
       passEncoder.end();
     }
     
