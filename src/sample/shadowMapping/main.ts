@@ -151,16 +151,20 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       }
     }
   };
+
+  const terrainParams = {
+    terrain: "k2",
+  }
   
   let activeTerrain = terrainOptions.k2Terrain;
 
   var resetFolder = gui.addFolder('Reset');
   resetFolder.open();
-  resetFolder.add(resetParams, 'resetCamera').name("Reset Camera");
+  resetFolder.add(resetParams, 'resetCamera', ['k2', 'everest']).name("Reset Camera");
 
   var terrainFolder = gui.addFolder('Terrain');
   terrainFolder.open();
-  
+  terrainFolder.add(terrainParams, 'terrain').name("Select Terrain");
 
   var weatherFolder = gui.addFolder('Weather');
   weatherFolder.open();
