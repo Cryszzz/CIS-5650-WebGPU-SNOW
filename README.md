@@ -6,7 +6,7 @@ by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
 ![Teaser](img/teaser.gif)
 
-[Live Website](https://Cryszzz.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
+[Live Website](https://jailea.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
 
 ## Installation
 1. Clone this repo
@@ -85,6 +85,9 @@ Permance of our program depends on how large the resolution of the heightmap is.
 
 [Milestone 3 Slide](https://docs.google.com/presentation/d/1xQUIeNf7sn4tsLwD-Bp2S6V0gC3YropOTHALUkqWU24/edit?usp=sharing)
 
+## Initial Pitch Slide:
+[Pitch Slide](https://uluyek.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
+
 ### Future Work to be completed:
 - Higher resolution snow simulation
 - Importing of .tiff files and weather data
@@ -95,3 +98,4 @@ Permance of our program depends on how large the resolution of the heightmap is.
 - Base code from [WebGPU Samples](https://webgpu.github.io/webgpu-samples)
 - [dat-gui](https://github.com/dataarts/dat.gui) for gui controls
 - [WebGPU documentation](https://www.w3.org/TR/webgpu/)
+
