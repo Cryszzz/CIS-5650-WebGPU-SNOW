@@ -4,7 +4,7 @@
 
 By [Xiaoxiao Zou](https://www.linkedin.com/in/xiaoxiao-zou-23482a1b9/), [Keyu Lu](https://www.linkedin.com/in/keyu-lu/), and [Jason Li](https://www.linkedin.com/in/jeylii/)
 
-![Teaser](img/teaser.gif)
+![Teaser](https://github.com/Cryszzz/CIS-5650-Final-Project/blob/main/img/team-8.gif)
 
 ## WebGPU Live Demo
 
