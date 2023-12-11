@@ -75,6 +75,9 @@ We change from CPU mesh loading to GPU mesh loading. On CPU side, it only allows
 
 Permance of our program depends on how large the resolution of the heightmap is. When the resolution is 
 
+## Final Presentation:
+[Final Presentation Slide](https://docs.google.com/presentation/d/1QfnwwhX6g8tM5fp8iDHfXsaPnH0HTaQwD3LWRI_TxFk/edit?usp=sharing)
+
 ## Milestone Presentations:
 [Milestone 1 Slide](https://docs.google.com/presentation/d/1uNRjlkvVQNS3TbfoODOnT562rLxhvPrwMv3znV_8AW0/edit?usp=sharing)
 
