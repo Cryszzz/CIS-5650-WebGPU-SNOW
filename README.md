@@ -82,8 +82,12 @@ To further enhance the reality of our simulation for snow accumulation on large-
 
 We changed from CPU mesh loading to GPU mesh loading. On the CPU side, it only allows a mesh size of 200*200. It changes to 8kx8k on GPU mesh generation (this limit is caused by WebGPU texture maximum size is limited to 8kx8k).
 
-The performance of our program depends on how large the resolution of the height map is. When the resolution is 
+The performance of our program depends on how large the resolution of the height map is.
 
+| Resolution | 265x265 | 4057x3571 | 2918 x 5841|
+| ------|------|------|------|
+| FPS | 60 | 27| 20|
+| Memory (MB)|60 |390| 500|
 ### Final Presentation:
 [Final Presentation Slide](https://docs.google.com/presentation/d/1QfnwwhX6g8tM5fp8iDHfXsaPnH0HTaQwD3LWRI_TxFk/edit?usp=sharing)
 
