@@ -105,4 +105,8 @@ The performance of our program depends on how large the resolution of the height
 - Base code from [WebGPU Samples](https://webgpu.github.io/webgpu-samples)
 - [dat-gui](https://github.com/dataarts/dat.gui) for gui controls
 - [WebGPU documentation](https://www.w3.org/TR/webgpu/)
+- [Terrain Geotiff with Heightmap](https://search.asf.alaska.edu/#/)
+- [Terrain Texture](https://www.google.com/earth/about/)
+- [Skybox Cubemaps](https://polyhaven.com/a/sunflowers_puresky)
+
 
