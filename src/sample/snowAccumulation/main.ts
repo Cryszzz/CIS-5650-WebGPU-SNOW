@@ -33,8 +33,8 @@ const cellInstanceByteSize =
   0;
 
 const cameraDefaults = {
-  position: vec3.create(0, 300, -80),
-  target: vec3.create(0, 0, 0),
+  position: vec3.create(-70, 300, -80),
+  target: vec3.create(-160, 340, -100),
   // position: vec3.create(0, 5, -5),
   // target: vec3.create(0, 0, 0),
 };
@@ -98,8 +98,8 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         maxSWE: 250000.0, //done
         temperatureLapseNormalizeFactor: 20.0, //done
         precipitationLapseNormalizeFactor: 20.0, //done
-        heightMul: 0.01, //done
-        gridSize: 0.1, //done
+        heightMul: 0.05, //done
+        gridSize: 0.3, //done
         terrainSkip: 3, //done
         terrainDataNormalizeFactor: 10.0, //done
         defaultTemperature: 8.0, //done
