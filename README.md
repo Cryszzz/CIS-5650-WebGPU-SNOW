@@ -75,7 +75,10 @@ We change from CPU mesh loading to GPU mesh loading. On CPU side, it only allows
 
 Permance of our program depends on how large the resolution of the heightmap is. When the resolution is 
 
-## Future Work & References
+## Milestone Presentations:
+[Milestone 1 Slide](https://docs.google.com/presentation/d/1uNRjlkvVQNS3TbfoODOnT562rLxhvPrwMv3znV_8AW0/edit?usp=sharing)
+[Milestone 2 Slide](https://docs.google.com/presentation/d/17AprlqkK8NhQwR6VgV3KRNBkIOB3YXKhVD7bH3x5vaQ/edit?usp=sharing)
+[Milestone 3 Slide](https://docs.google.com/presentation/d/1xQUIeNf7sn4tsLwD-Bp2S6V0gC3YropOTHALUkqWU24/edit?usp=sharing)
 
 ### Future Work to be completed:
 - Higher resolution snow simulation
