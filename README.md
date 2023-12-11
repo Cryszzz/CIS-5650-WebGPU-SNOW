@@ -25,6 +25,7 @@ By [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()
 
 **Simulation Controls**
 - `simulate`: start/stop simulation
+- `Select Terrain`: allow the selection between different terrains to simulate snow accumulation
 - `deltaTime`: the time step to use in the simulation
 - `temperature`: change the temperature to be used for weather simulation
 - `precipitation`: change the precipitation to be used for weather simulation
@@ -32,7 +33,7 @@ By [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()
 - `Hour of Day, Day of Year`: enable the use of change the day of the year which will affect the amount of solar radiation to the snow.
 - `Height Multiplier`: enable the use of change the height multiplier that changes the height of the terrain.
 - `Grid size`: change the grid size of each small cell grid size for terrain mesh.
-- `Fog `: change the range of the distanced fog to enhance the reality of rendered terrain and snow scene
+- `Fog Start`, `Fog End`: change the range of the distanced fog to enhance the reality of rendered terrain and snow scene
 
 ## Overview
 
@@ -41,11 +42,12 @@ This project implements a real-time snow accumulation simulation based on the pa
 <!-- ![Snow-Accumulation-Gif]() -->
 
 ## Pipeline
+**Central Pipeline**
 We use compute shaders written in WGSL for WebGPU to simulate our snow accumulation. The overall pipeline can be broken down into 5 stages:
 
 1. **Terrain Grid Generation**: from a .geotiff file with height data, generate a mesh with a uniform grid.
 2. **Compute: Snow Fall**: Using simulated precipitation data, a snow-water equivalent (SWE) is calculated per cell
-3. **Compute: Snow Melt**: The degree-day method is used to simulate melting of snow independently for each terrain cell.
+3. **Compute: Snow Melt**: The degree-day method is used to simulate the melting of snow independently for each terrain cell.
 4. **Compute: Snow Redistribution**: For each terrain cell, redistribute accumulated snow to neighboring cells using inclination data.
 5. **Terrain & Snow Rendering**: Output a color and displacement map from the compute pipeline to be rendered over the terrain.
 
