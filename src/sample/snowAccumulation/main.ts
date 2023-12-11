@@ -35,15 +35,13 @@ const cellInstanceByteSize =
 const cameraDefaults = {
   position: vec3.create(-70, 350, -80),
   target: vec3.create(-800, 400, -1000),
-  // position: vec3.create(0, 5, -5),
-  // target: vec3.create(0, 0, 0),
 };
 
 
 function setCamera(position?, target?)
 {
-  const initialCameraPosition = position ? position : cameraDefaults.position;
-  const initialCameraTarget = target ? target : cameraDefaults.target;
+  const initialCameraPosition = typeof position !== 'undefined' ? position : cameraDefaults.position;
+  const initialCameraTarget = typeof target !== 'undefined' ? target : cameraDefaults.target;
   return new WASDCamera({ position: initialCameraPosition, target: initialCameraTarget });
 }
 
@@ -97,12 +95,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   let camera = setCamera();
   let guiPrecipitation = 0.0;
 
-  const resetParams: any = 
-  {
-    resetCamera() {
-      camera = setCamera();
-    },
-  };
+
 
   const terrainOptions = {
     k2Terrain: {
@@ -125,6 +118,10 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         terrainSkip: 3, //done
         terrainDataNormalizeFactor: 10.0, //done
         defaultTemperature: 8.0, //done
+      },
+      cameraDefaults: {
+        position: vec3.create(-70, 350, -80),
+        target: vec3.create(-800, 400, -1000),
       }
     },
     everestTerrain: {
@@ -133,7 +130,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       textureFilename: "../assets/img/file/rock.png",
       configurationParams: {
         posNormalizeFactor: 5000000.0,
-        posMax: 350.0,
+        posMax: 175.0,
         colorMaxScaleFactor: 0.70,
         areaScaleFactor: 500.0,
         r_i_tScaleFactor: 0.78,
@@ -147,6 +144,10 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         terrainSkip: 1.0,
         terrainDataNormalizeFactor: 100.0,
         defaultTemperature: -1.0,
+      },
+      cameraDefaults: {
+        position: vec3.create(-350, 615, -380),
+        target: vec3.create(-70, 550, -80),
       }
     },
   };
@@ -154,6 +155,13 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   const terrainParams = {
     terrain: terrainOptions.k2Terrain,
   }
+
+  const resetParams: any = 
+  {
+    resetCamera() {
+      camera = setCamera(terrainParams.terrain.cameraDefaults.position, terrainParams.terrain.cameraDefaults.target);
+    },
+  };
 
   const weatherParams = 
   {
@@ -670,6 +678,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       weatherParams.guiTemperature = terrainParams.terrain.configurationParams.defaultTemperature;
       weatherFolder.updateDisplay();
       resetParams.resetSimulation();
+      camera = setCamera(terrainParams.terrain.cameraDefaults.position, terrainParams.terrain.cameraDefaults.target);
       colorChanged = true;
       heightChanged = true;
     });
