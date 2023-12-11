@@ -13,7 +13,7 @@ import { createInputHandler, inputSourceInfo } from './input';
 import { getWeatherData } from './weather';
 import { getDayOfYear, getHourOfDay,degreesToRadians, timeToDays, timeToHours, getNumHoursPassed, getNumDaysPassed, getMin} from '../../meshes/utils';
 import { computeSnowCPU } from './snowCompute';
-import { max } from 'wgpu-matrix/dist/2.x/vec2-impl';
+import { max, set } from 'wgpu-matrix/dist/2.x/vec2-impl';
 import { getHeightData, numberArray } from '../../meshes/geotiff-utils';
 
 const numParticles = 0;
@@ -58,6 +58,28 @@ function resetTerrainBufferMapping(device, cellArray, cellBuffer)
   );
 }
 
+  
+function getCellArray(terrainCells)
+{
+  const cellArray = new Float32Array(terrainCells.Size * cellInstanceByteSize / 4);
+  for (let i = 0; i < terrainCells.Size; i++){
+    cellArray.set([
+      terrainCells.Aspect[i],
+      terrainCells.Inclination[i],
+      terrainCells.Altitude[i],
+      terrainCells.Latitude[i],
+      terrainCells.Area[i],
+      terrainCells.AreaXZ[i],
+      terrainCells.SnowWaterEquivalent[i],
+      terrainCells.InterpolatedSWE[i],
+      terrainCells.SnowAlbedo[i],
+      terrainCells.DaysSinceLastSnowfall[i],
+      terrainCells.Curvature[i],
+      0.0,
+    ],i*12);
+  }
+  return cellArray;
+}
 
 const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
  
@@ -95,10 +117,10 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         r_i_tScaleFactor: 0.82, //done
         k_mScaleFactor: 2.5, //done
         meltFactor: 5.5, //done
-        maxSWE: 250000.0, //done
+        maxSWE: 600000.0, //done
         temperatureLapseNormalizeFactor: 20.0, //done
         precipitationLapseNormalizeFactor: 20.0, //done
-        heightMul: 0.106, //done
+        heightMul: 0.104, //done
         gridSize: 0.7, //done
         terrainSkip: 3, //done
         terrainDataNormalizeFactor: 10.0, //done
@@ -111,20 +133,20 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       textureFilename: "../assets/img/file/rock.png",
       configurationParams: {
         posNormalizeFactor: 5000000.0,
-        posMax: 150.0,
-        colorMaxScaleFactor: 0.64,
-        areaScaleFactor: 100.0,
-        r_i_tScaleFactor: 0.82,
-        k_mScaleFactor: 2.0,
-        meltFactor: 6.1,
-        maxSWE: 250000.0,
-        temperatureLapseNormalizeFactor: 20.0,
-        precipitationLapseNormalizeFactor: 20.0,
-        heightMul: 0.01, 
-        gridSize: 0.1, 
-        terrainSkip: 3,
-        terrainDataNormalizeFactor: 10.0,
-        defaultTemperature: 8.0,
+        posMax: 350.0,
+        colorMaxScaleFactor: 0.70,
+        areaScaleFactor: 500.0,
+        r_i_tScaleFactor: 0.78,
+        k_mScaleFactor: 2.5,
+        meltFactor: 5.5,
+        maxSWE: 2000000.0,
+        temperatureLapseNormalizeFactor: 7.0,
+        precipitationLapseNormalizeFactor: 7.5,
+        heightMul: 0.07, 
+        gridSize: 4.57, 
+        terrainSkip: 1.0,
+        terrainDataNormalizeFactor: 100.0,
+        defaultTemperature: -1.0,
       }
     },
   };
@@ -193,12 +215,12 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   // precipController = precipController.step(0.1);
 
   var statsFolder = gui.addFolder('Stats');
-  statsFolder.open();
+  // statsFolder.open();
   statsFolder.add(statsParams, 'showStats').name("Show Stats");
   statsFolder.add(statsParams, 'showMemoryUsage').name("Memory Usage");
 
   var constantsFolder = gui.addFolder('Simulation Constants');
-  constantsFolder.open();
+  // constantsFolder.open();
   constantsFolder.add(constantsParams, 'measurementAltitude', 0.0, 10000.0).name("Measurement Altitude");
   constantsFolder.add(constantsParams, 'tSnowA', -5.0, 5.0).name("Temp Snow A").step(0.5);
   constantsFolder.add(constantsParams, 'tSnowB', -5.0, 5.0).name("Temp Snow B").step(0.5);
@@ -215,7 +237,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   var sizeFolder = gui.addFolder('Size');
   sizeFolder.open();
   sizeFolder.add(sizeParams, 'heightMul', 0.0, 0.2).name("Height Multiplier").step(0.002);
-  sizeFolder.add(sizeParams, 'gridSize', 0.0, 1.0).name("Grid Size").step(0.01);
+  sizeFolder.add(sizeParams, 'gridSize', 0.0, 10.0).name("Grid Size").step(0.01);
  
   var fogFolder = gui.addFolder('Fog');
   fogFolder.open();
@@ -299,7 +321,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
 
 
   // TODO: replace with a value in terrain mesh itself
-  const minAltitude = getMin(terrainCells.Altitude);
+  // const minAltitude = getMin(terrainCells.Altitude);
 
   const terrainCellsDebugIndex = [11 * mesh.width + 6, 11 * mesh.width + 7, 9 * mesh.width + 15,
                                   9 * mesh.width + 16, 9 * mesh.width + 17, 9 * mesh.width + 18,
@@ -317,7 +339,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   //   console.log("P3: " + " " + terrainCells.P3[currIndex]);
   //   console.log("Aspect: " + " " + terrainCells.Aspect[currIndex]);
     console.log("Inclination: " + " " + terrainCells.Inclination[currIndex]);
-  //   console.log("Altitude: " + " " + terrainCells.Altitude[currIndex]);
+    console.log("Altitude: " + " " + terrainCells.Altitude[currIndex]);
   //   // console.log("Latitude: " + i + " " + terrainCells.Latitude[i]);
   //   console.log("Area: " + " " + terrainCells.Area[currIndex]);
     console.log("AreaXZ: " + " " + terrainCells.AreaXZ[currIndex] * 100);
@@ -328,49 +350,40 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   //   console.log("Curvature: " + " " + terrainCells.Curvature[currIndex]);
   // // }
   }
-  const cellBuffer = device.createBuffer({
-    size: terrainCells.Size * cellInstanceByteSize,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
-  });
+
+  async function setCellBuffer(terrainCells)
   {
-    const mapping = new Float32Array(cellBuffer.getMappedRange());
-    for (let i = 0; i < terrainCells.Size; i++){
-      mapping.set([
-        terrainCells.Aspect[i],
-        terrainCells.Inclination[i],
-        terrainCells.Altitude[i],
-        terrainCells.Latitude[i],
-        terrainCells.Area[i],
-        terrainCells.AreaXZ[i],
-        terrainCells.SnowWaterEquivalent[i],
-        terrainCells.InterpolatedSWE[i],
-        terrainCells.SnowAlbedo[i],
-        terrainCells.DaysSinceLastSnowfall[i],
-        terrainCells.Curvature[i],
-        0.0,
-      ],i*12);
+    let cellBuffer = device.createBuffer({
+      size: terrainCells.Size * cellInstanceByteSize,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
+    });
+    {
+      const mapping = new Float32Array(cellBuffer.getMappedRange());
+      for (let i = 0; i < terrainCells.Size; i++){
+        mapping.set([
+          terrainCells.Aspect[i],
+          terrainCells.Inclination[i],
+          terrainCells.Altitude[i],
+          terrainCells.Latitude[i],
+          terrainCells.Area[i],
+          terrainCells.AreaXZ[i],
+          terrainCells.SnowWaterEquivalent[i],
+          terrainCells.InterpolatedSWE[i],
+          terrainCells.SnowAlbedo[i],
+          terrainCells.DaysSinceLastSnowfall[i],
+          terrainCells.Curvature[i],
+          0.0,
+        ],i*12);
+      }
+      cellBuffer.unmap();
     }
-    cellBuffer.unmap();
+    return cellBuffer;
   }
 
-  const cellArray = new Float32Array(terrainCells.Size * cellInstanceByteSize / 4);
-  for (let i = 0; i < terrainCells.Size; i++){
-    cellArray.set([
-      terrainCells.Aspect[i],
-      terrainCells.Inclination[i],
-      terrainCells.Altitude[i],
-      terrainCells.Latitude[i],
-      terrainCells.Area[i],
-      terrainCells.AreaXZ[i],
-      terrainCells.SnowWaterEquivalent[i],
-      terrainCells.InterpolatedSWE[i],
-      terrainCells.SnowAlbedo[i],
-      terrainCells.DaysSinceLastSnowfall[i],
-      terrainCells.Curvature[i],
-      0.0,
-    ],i*12);
-  }
+  let cellBuffer = await setCellBuffer(terrainCells);
+  let cellArray = getCellArray(terrainCells);
+
 
   resetParams.resetSimulation = function() {
     weatherParams.guiPrecipitation = 0.0;
@@ -481,7 +494,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     format: 'depth24plus-stencil8',
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
-  const writableTexture = device.createTexture({
+  let writableTexture = device.createTexture({
     size: [mesh.width-1, mesh.height-1, 1],
     format: 'rgba32float', // Adjust based on your requirements
     usage:
@@ -581,9 +594,20 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     // const arrayBuffer = new Float32Array(heightData);
     return { texture: heightTextureSet, data: heightData};
   }
-  
-  // let heightTexture: GPUTexture;
-  // {
+
+  function setTerrainTexture(mesh)
+  {
+    writableTexture = device.createTexture({
+      size: [mesh.width-1, mesh.height-1, 1],
+      format: 'rgba32float', // Adjust based on your requirements
+      usage:
+          GPUTextureUsage.TEXTURE_BINDING |
+          GPUTextureUsage.STORAGE_BINDING |
+          GPUTextureUsage.COPY_DST |
+          GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+  }
+
 
   let color = await setColorTexture('../assets/img/file/k2-t.png');
   device.queue.copyExternalImageToTexture(
@@ -606,14 +630,48 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   terrainFolder.add(terrainParams, 'terrain',Object.values(terrainOptions).map(option => option.name)).name("Select Terrain")
   .setValue(terrainOptions.k2Terrain.name)
   .onChange(async function (value) {
-     terrainParams.terrain = Object.values(terrainOptions).find(option => option.name === value);
-     mesh = await getTerrainMesh(terrainParams.terrain.terrainFilename, terrainParams.terrain.configurationParams.terrainSkip, terrainParams.terrain.configurationParams.terrainDataNormalizeFactor);
-     terrainCells = await getTerrainCells(mesh);
-     height = await setHeightTexture(terrainParams.terrain.terrainFilename);
-     heightChanged = true;
-     color = await setColorTexture(terrainParams.terrain.textureFilename);
-     colorChanged = true;
-     resetParams.resetSimulation();
+      terrainParams.terrain = Object.values(terrainOptions).find(option => option.name === value);
+      mesh = await getTerrainMesh(terrainParams.terrain.terrainFilename, terrainParams.terrain.configurationParams.terrainSkip, terrainParams.terrain.configurationParams.terrainDataNormalizeFactor);
+      terrainCells = await getTerrainCells(mesh);
+      height = await setHeightTexture(terrainParams.terrain.terrainFilename);
+      color = await setColorTexture(terrainParams.terrain.textureFilename);
+      cellArray = getCellArray(terrainCells);
+      cellBuffer = await setCellBuffer(terrainCells);
+      setTerrainTexture(mesh);
+
+      for (let i = 0; i < terrainCellsDebugIndex.length; i++) {
+        const currIndex = terrainCellsDebugIndex[i];
+      //   console.log("Terrain Cell: " + currIndex)
+      //   console.log("P0: " + " " + terrainCells.P0[currIndex]);
+      //   console.log("P1: " + " " + terrainCells.P1[currIndex]);
+      //   console.log("P2: " + " " + terrainCells.P2[currIndex]);
+      //   console.log("P3: " + " " + terrainCells.P3[currIndex]);
+      //   console.log("Aspect: " + " " + terrainCells.Aspect[currIndex]);
+        console.log("Inclination: " + " " + terrainCells.Inclination[currIndex]);
+        console.log("Altitude: " + " " + terrainCells.Altitude[currIndex]);
+      //   // console.log("Latitude: " + i + " " + terrainCells.Latitude[i]);
+      //   console.log("Area: " + " " + terrainCells.Area[currIndex]);
+        console.log("AreaXZ: " + " " + terrainCells.AreaXZ[currIndex]);
+      //   // console.log("SnowWaterEquivalent: " + i + " " + terrainCells.SnowWaterEquivalent[i]);
+      //   // console.log("InterpolatedSWE: " + i + " " + terrainCells.InterpolatedSWE[i]);
+      //   // console.log("SnowAlbedo: " + i + " " + terrainCells.SnowAlbedo[i]);
+      //   // console.log("DaysSinceLastSnowfall: " + i + " " + terrainCells.DaysSinceLastSnowfall[i]);
+      //   console.log("Curvature: " + " " + terrainCells.Curvature[currIndex]);
+      // // }
+      }
+
+      console.log("cellBuffer.size: " + cellBuffer.size);
+      sizeParams.heightMul = terrainParams.terrain.configurationParams.heightMul;
+      sizeParams.gridSize = terrainParams.terrain.configurationParams.gridSize;
+      sizeFolder.updateDisplay();
+      constantsParams.k_m = terrainParams.terrain.configurationParams.k_mScaleFactor;
+      constantsParams.meltFactor = terrainParams.terrain.configurationParams.meltFactor;
+      constantsFolder.updateDisplay();
+      weatherParams.guiTemperature = terrainParams.terrain.configurationParams.defaultTemperature;
+      weatherFolder.updateDisplay();
+      resetParams.resetSimulation();
+      colorChanged = true;
+      heightChanged = true;
     });
   // Can't get this to be set by default so doing it here
   terrainParams.terrain = terrainOptions.k2Terrain;
@@ -652,7 +710,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   device.queue.writeBuffer(gridBuffer, 0, uniformArray);
-  const uniformBindGroup = device.createBindGroup({
+  let uniformBindGroup = device.createBindGroup({
     layout: renderPipeline.getBindGroupLayout(0),
     entries: [
       {
@@ -744,7 +802,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       entryPoint: 'simulate',
     },
   });
-  const computeBindGroup = device.createBindGroup({
+  let computeBindGroup = device.createBindGroup({
     layout: computePipeline.getBindGroupLayout(0),
     entries: [
       {
@@ -876,6 +934,80 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         {bytesPerRow:numberArray[0]*4},
         { width: numberArray[0], height: numberArray[1] }
       );
+      uniformBindGroup = device.createBindGroup({
+        layout: renderPipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: {
+              buffer: uniformBuffer,
+            },
+          },
+          {
+            binding: 1,
+            resource: writableTexture.createView(),
+          },
+          {
+            binding: 2,
+            resource: color.texture.createView(),
+          },
+          {
+            binding: 3,
+            resource: {
+              buffer: gridBuffer,
+            }
+          },
+          {
+            binding: 4,
+            resource: height.texture.createView(),
+          },
+          {
+            binding: 5,
+            resource: {
+              buffer: maxBuffer,
+            }
+          }
+        ],
+      });
+      computeBindGroup = device.createBindGroup({
+        layout: computePipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: {
+              buffer: simulationUBOBuffer,
+            },
+          },
+          {
+            binding: 1,
+            resource: {
+              buffer: cellBuffer,
+              offset: 0,
+              size: terrainCells.Size * cellInstanceByteSize,
+            },
+          },
+          {
+            binding: 2,
+            resource: color.texture.createView(),
+          },
+          {
+            binding: 3,
+            //resource: cubeTexture.createView(),
+            resource: writableTexture.createView({
+                format: 'rgba32float',
+                dimension: '2d',
+              }
+            ),
+          },
+          {
+            binding: 4,
+            resource: {
+              buffer: maxBuffer,
+            }
+          },
+        ],
+      });
+      resetTerrainBufferMapping(device, cellArray, cellBuffer);
       heightChanged = false;
     }
 
@@ -886,6 +1018,41 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         { texture: color.texture },
         [color.image.width, color.image.height]
       );
+      uniformBindGroup = device.createBindGroup({
+        layout: renderPipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: {
+              buffer: uniformBuffer,
+            },
+          },
+          {
+            binding: 1,
+            resource: writableTexture.createView(),
+          },
+          {
+            binding: 2,
+            resource: color.texture.createView(),
+          },
+          {
+            binding: 3,
+            resource: {
+              buffer: gridBuffer,
+            }
+          },
+          {
+            binding: 4,
+            resource: height.texture.createView(),
+          },
+          {
+            binding: 5,
+            resource: {
+              buffer: maxBuffer,
+            }
+          }
+        ],
+      });
       colorChanged = false;
     }
 
@@ -893,7 +1060,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       simulationUBOBuffer,
       0,
       new Float32Array([
-        minAltitude,
+        terrainCells.MinAltitude,
         constantsParams.tSnowA,
         constantsParams.tSnowB,
         constantsParams.tMeltA,

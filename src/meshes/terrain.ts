@@ -92,6 +92,7 @@ async function generateTerrainCells(mesh) {
     DaysSinceLastSnowfall: number[],
     Curvature: number[],
     Size: number,
+    MinAltitude: number
   } = {
     P0: new Array<[number, number, number]>(grid_size),
     P1: new Array<[number, number, number]>(grid_size),
@@ -109,6 +110,7 @@ async function generateTerrainCells(mesh) {
     DaysSinceLastSnowfall: new Array<number>(grid_size),
     Curvature: new Array<number>(grid_size),
     Size: (height-1)*(width-1),
+    MinAltitude: Infinity
   };
 
   let initialMaxSnow = 0.0;
@@ -130,6 +132,9 @@ async function generateTerrainCells(mesh) {
       let normal = vec3.cross(vec3.create(), vec3.subtract(vec3.create(), P1, P0), vec3.subtract(vec3.create(), P2, P0));
       let centroid = vec3.fromValues((P0[0] + P1[0] + P2[0] + P3[0]) / 4, (P0[1] + P1[1] + P2[1] + P3[1]) / 4, (P0[2] + P1[2] + P2[2] + P3[2]) / 4);
       cells.Altitude[cellIndex] = centroid[1]; // Centroid.Z
+      if (cells.Altitude[cellIndex] < cells.MinAltitude) {
+        cells.MinAltitude = cells.Altitude[cellIndex];
+      }
 
       let P0_minus_P2 = vec3.subtract(vec3.create(), P0, P2);
       let P1_minus_P2 = vec3.subtract(vec3.create(), P1, P2);
