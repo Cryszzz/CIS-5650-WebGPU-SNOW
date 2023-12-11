@@ -83,17 +83,17 @@ We changed from CPU mesh loading to GPU mesh loading. On the CPU side, it only a
 
 The performance of our program depends on how large the resolution of the height map is. When the resolution is 
 
-## Final Presentation:
+### Final Presentation:
 [Final Presentation Slide](https://docs.google.com/presentation/d/1QfnwwhX6g8tM5fp8iDHfXsaPnH0HTaQwD3LWRI_TxFk/edit?usp=sharing)
 
-## Milestone Presentations:
+### Milestone Presentations:
 [Milestone 1 Slide](https://docs.google.com/presentation/d/1uNRjlkvVQNS3TbfoODOnT562rLxhvPrwMv3znV_8AW0/edit?usp=sharing)
 
 [Milestone 2 Slide](https://docs.google.com/presentation/d/17AprlqkK8NhQwR6VgV3KRNBkIOB3YXKhVD7bH3x5vaQ/edit?usp=sharing)
 
 [Milestone 3 Slide](https://docs.google.com/presentation/d/1xQUIeNf7sn4tsLwD-Bp2S6V0gC3YropOTHALUkqWU24/edit?usp=sharing)
 
-## Initial Pitch Slide:
+### Initial Pitch Slide:
 [Pitch Slide](https://uluyek.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
 
 ### Future Work to be completed:
