@@ -84,7 +84,7 @@ To further enhance the realisticness of our simulation for snow accumulation on 
 
 We instanced mesh on vertex shader using instancing drawing. The mesh size is limited to 8kx8k on GPU mesh generation (this limit is caused by WebGPU texture maximum size is limited to 8kx8k).
 
-![Grid-mesh](img/mesh.png)
+![Grid-mesh](img/mesh.PNG)
 
 The performance of our program depends on how large the resolution of the height map is.
 
