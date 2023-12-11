@@ -143,7 +143,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         gridSize: 4.57, 
         terrainSkip: 1.0,
         terrainDataNormalizeFactor: 100.0,
-        defaultTemperature: -1.0,
+        defaultTemperature: -1.7,
       },
       cameraDefaults: {
         position: vec3.create(-350, 615, -380),
