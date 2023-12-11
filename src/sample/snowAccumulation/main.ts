@@ -941,9 +941,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       uniformBuffer,
       64,
       new Float32Array([
-        view[0], view[4], view[8], // right
-        0, // padding
-        view[1], view[5], view[9], // up
+        camera.position[0], camera.position[1], camera.position[2], // right
+        30.0, // padding //fogstart
+        view[5], view[9], 1000.0,// up //fogend
         sizeParams.heightMul, // heightMul
         terrainParams.terrain.configurationParams.posNormalizeFactor,
         terrainParams.terrain.configurationParams.posMax,
