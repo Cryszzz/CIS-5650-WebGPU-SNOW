@@ -33,8 +33,8 @@ const cellInstanceByteSize =
   0;
 
 const cameraDefaults = {
-  position: vec3.create(-70, 350, -80),
-  target: vec3.create(-800, 400, -1000),
+  position: vec3.create(-350, 615, -380),
+  target: vec3.create(-70, 550, -80),
 };
 
 
@@ -153,7 +153,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   };
 
   const terrainParams = {
-    terrain: terrainOptions.k2Terrain,
+    terrain: terrainOptions.everestTerrain,
   }
 
   const resetParams: any = 
@@ -204,7 +204,6 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     fogEndDist: 1200.0,
   }
 
-  let activeTerrain = terrainOptions.k2Terrain;
 
 
   var resetFolder = gui.addFolder('Reset');
@@ -617,7 +616,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   }
 
 
-  let color = await setColorTexture('../assets/img/file/k2-t.png');
+  let color = await setColorTexture(terrainParams.terrain.textureFilename);
   device.queue.copyExternalImageToTexture(
     { source: color.image },
     { texture: color.texture },
@@ -625,7 +624,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   );
 
 
-  let height = await setHeightTexture('../assets/img/file/k2-h.tif');
+  let height = await setHeightTexture(terrainParams.terrain.terrainFilename);
   device.queue.writeTexture(
     { texture: height.texture },
     height.data,
@@ -636,7 +635,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   let heightChanged = false;
   let colorChanged = false;
   terrainFolder.add(terrainParams, 'terrain',Object.values(terrainOptions).map(option => option.name)).name("Select Terrain")
-  .setValue(terrainOptions.k2Terrain.name)
+  .setValue(terrainOptions.everestTerrain.name)
   .onChange(async function (value) {
       terrainParams.terrain = Object.values(terrainOptions).find(option => option.name === value);
       mesh = await getTerrainMesh(terrainParams.terrain.terrainFilename, terrainParams.terrain.configurationParams.terrainSkip, terrainParams.terrain.configurationParams.terrainDataNormalizeFactor);
@@ -683,7 +682,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       heightChanged = true;
     });
   // Can't get this to be set by default so doing it here
-  terrainParams.terrain = terrainOptions.k2Terrain;
+  terrainParams.terrain = terrainOptions.everestTerrain;
 
     // //const response = await fetch('../assets/img/file/k2-h.tif');
     // //const response = await fetch('../assets/img/Di-3d.png');
