@@ -4,9 +4,11 @@
 
 by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
-![Teaser](img/teaser.gif)
+## THIS REPO IS DISCARDED, PLEASE GO TO RECENT ONE [SNOW ACCUMULATION](https://github.com/jailea/CIS-5650-Final-Project)
+
 
 [Live Website](https://jailea.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
+![Teaser](img/teaser.gif)
 
 ## Installation
 1. Clone this repo
@@ -73,7 +75,7 @@ Using our displacement and color map output from the compute shader, we interpol
 
 We change from CPU mesh loading to GPU mesh loading. On CPU side, it only allows mesh size of 200*200. It changes to 8kx8k on GPU mesh generation (this limit is caused by WebGPU texture maximum size is limited to 8kx8k).
 
-Permance of our program depends on how large the resolution of the heightmap is. When the resolution is 
+Performance of our program depends on how large the resolution of the heightmap is. When the resolution is 
 
 ## Final Presentation:
 [Final Presentation Slide](https://docs.google.com/presentation/d/1QfnwwhX6g8tM5fp8iDHfXsaPnH0HTaQwD3LWRI_TxFk/edit?usp=sharing)
