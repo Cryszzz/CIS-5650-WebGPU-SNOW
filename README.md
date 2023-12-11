@@ -70,7 +70,7 @@ Using our displacement and color map output from the compute shader, we interpol
 
 
 ### Performance Notes
-Coming Soon!
+Coming Soon
 
 ## Future Work & References
 
