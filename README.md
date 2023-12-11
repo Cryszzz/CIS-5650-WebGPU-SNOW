@@ -6,14 +6,13 @@ by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
 ![Teaser](img/teaser.gif)
 
-[live website](https://cryszzz.github.io/CIS-5650-Final-Project/samples/shadowMapping)
+[Live Website](https://Cryszzz.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
 
 ## Installation
 1. Clone this repo
 2. Run `npm i`
 3. Start with `npm start`
 4. View the page in your browser!
-
 
 ## Usage
 **Camera Controls**
@@ -28,6 +27,9 @@ by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 - `temperature`: change the temperature to be used for weather simulation
 - `precipitation`: change the precipitation to be used for weather simulation
 - `use gui weather`: enable the use of weather parameters given in the gui for weather simulation
+- `Hour of Day, Day of Year`: enable the use of change the day of the year which will affect amount of the solar radiation to the snow.
+- `Height Multiplier`: enable the use of change the height multiplier that change the height of terrien.
+- `Grid size`: change the grid size of each small cell grid size for terrein mesh.
 
 ## Overview
 
@@ -38,7 +40,7 @@ This project implements a real-time snow accumulation simulation based on the pa
 ## Pipeline
 We use compute shaders written in WGSL for WebGPU to simulate our snow accumulation. The overall pipeline can be broken down into 5 stages:
 
-1. **Terrain Grid Generation**: from a .tiff file with height data, generate a mesh with a uniform grid.
+1. **Terrain Grid Generation**: from a .geotiff file with height data, generate a mesh with a uniform grid.
 2. **Compute: Snow Fall**: Using simulated precipitation data, a snow-water equivalent (SWE) is calculated per cell
 3. **Compute: Snow Melt**: The degree-day method is used to simulate melting of snow independently for each terrain cell.
 4. **Compute: Snow Redistribution**: For each terrain cell, redistribute accumulated snow to neighboring cells using inclination data.
@@ -50,7 +52,7 @@ We use compute shaders written in WGSL for WebGPU to simulate our snow accumulat
 To ensure efficiency of the snow accumulation simulation, a uniform grid over the terrain is used for computation, and snow values are calculated independently using a compute pipeline for each grid cell. 
 
 ### Terrain Grid Implementation
-We create a terrain mesh using data from uploaded .tiff files (uploading coming soon), and use this mesh to create uniform terrain cells over the terrain for snow simulation. Physically-based parameters for each terrain cell such as inclination and aspect are then pre-processed and calculated for use further down in the pipeline for our accumulation simulation. A matching texture to the .tiff file is also used to render terrain.
+We create a terrain mesh using data from uploaded .tiff files, which is real-data geotiff in DEM (Digital Elevation Method) format, and use this mesh to create uniform terrain cells over the terrain for snow simulation. Physically-based parameters for each terrain cell such as inclination and aspect are then pre-processed and calculated for use further down in the pipeline for our accumulation simulation. A matching Ariel Imaginary file which has the same real-data geo info to the .tiff file is also used to render terrain.
 
 ![Terrain Mesh](img/terrain.png)
 
@@ -68,9 +70,20 @@ Using our displacement and color map output from the compute shader, we interpol
 
 
 ### Performance Notes
-Coming Soon!
 
-## Future Work & References
+We change from CPU mesh loading to GPU mesh loading. On CPU side, it only allows mesh size of 200*200. It changes to 8kx8k on GPU mesh generation (this limit is caused by WebGPU texture maximum size is limited to 8kx8k).
+
+Permance of our program depends on how large the resolution of the heightmap is. When the resolution is 
+
+## Final Presentation:
+[Final Presentation Slide](https://docs.google.com/presentation/d/1QfnwwhX6g8tM5fp8iDHfXsaPnH0HTaQwD3LWRI_TxFk/edit?usp=sharing)
+
+## Milestone Presentations:
+[Milestone 1 Slide](https://docs.google.com/presentation/d/1uNRjlkvVQNS3TbfoODOnT562rLxhvPrwMv3znV_8AW0/edit?usp=sharing)
+
+[Milestone 2 Slide](https://docs.google.com/presentation/d/17AprlqkK8NhQwR6VgV3KRNBkIOB3YXKhVD7bH3x5vaQ/edit?usp=sharing)
+
+[Milestone 3 Slide](https://docs.google.com/presentation/d/1xQUIeNf7sn4tsLwD-Bp2S6V0gC3YropOTHALUkqWU24/edit?usp=sharing)
 
 ### Future Work to be completed:
 - Higher resolution snow simulation

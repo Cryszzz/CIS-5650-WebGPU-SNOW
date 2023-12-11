@@ -1,12 +1,12 @@
 .canvasContainer {
   text-align: center;
   position: relative;
-  margin-top: 10px;
+  margin-top: 10px; 
 }
 
 .canvasContainer>canvas {
-  height: 100vh;
-  width: 100vw;
+  height: 99vh;
+  width: 99vw;
   aspect-ratio: 1;
 }
 
@@ -44,7 +44,7 @@ nav.sourceFileNav li a[data-active=true] {
 
 nav.sourceFileNav li:has(a[data-active=true]) {
   box-shadow: 0 -10px 0 0 rgb(167, 167, 167);
-  border-radius: 10px;
+  /* border-radius: 10px; */
 }
 
 .sourceFileContainer {
