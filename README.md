@@ -4,6 +4,8 @@
 
 by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
+## THIS REPO IS DISCARDED, PLEASE GO TO RECENT ONE [SNOW ACCUMULATION](https://github.com/jailea/CIS-5650-Final-Project)
+
 ![Teaser](img/teaser.gif)
 
 [Live Website](https://cryszzz.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
