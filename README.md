@@ -88,6 +88,9 @@ The performance of our program depends on how large the resolution of the height
 | ------|------|------|------|
 | FPS | 60 | 27| 20|
 | Memory (MB)|60 |390| 500|
+
+Tested on Nvidia RTX 4060 
+
 ### Final Presentation:
 [Final Presentation Slide](https://docs.google.com/presentation/d/1QfnwwhX6g8tM5fp8iDHfXsaPnH0HTaQwD3LWRI_TxFk/edit?usp=sharing)
 
