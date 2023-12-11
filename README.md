@@ -6,7 +6,7 @@ by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
 ![Teaser](img/teaser.gif)
 
-[Live Website](https://jailea.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
+[Live Website](https://cryszzz.github.io/webgpu-samples/samples/snowAccumulation)
 
 ## Installation
 1. Clone this repo
