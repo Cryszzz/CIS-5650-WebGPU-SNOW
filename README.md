@@ -1,12 +1,12 @@
-# Real-Time Snow Accumulation Simulation on Terrain in WebGPU
+# Real-Time Snow Accumulation Simulation on Terrain on WebGPU
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project**
 
-By [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]().
+By [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()
 
 ![Teaser](img/teaser.gif)
 
-## Live Demo
+## WebGPU Live Demo
 
 [Live Website](https://cryszzz.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
 
@@ -20,18 +20,19 @@ By [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]().
 **Camera Controls**
 - `Left Mouse`: change camera orientation
 - `WASD`: move camera position
-- `Space/Shift`: move camera up/down
-- `resetCamera`: on the GUI, reset camera to the scene's default position
+- `Space/Shift`: move the camera up/down
+- `resetCamera`: on the GUI, reset the camera to the scene's default position
 
 **Simulation Controls**
 - `simulate`: start/stop simulation
 - `deltaTime`: the time step to use in the simulation
 - `temperature`: change the temperature to be used for weather simulation
 - `precipitation`: change the precipitation to be used for weather simulation
-- `use gui weather`: enable the use of weather parameters given in the gui for weather simulation
-- `Hour of Day, Day of Year`: enable the use of change the day of the year which will affect amount of the solar radiation to the snow.
-- `Height Multiplier`: enable the use of change the height multiplier that change the height of terrien.
-- `Grid size`: change the grid size of each small cell grid size for terrein mesh.
+- `use GUI weather`: enable the use of weather parameters given in the GUI for weather simulation
+- `Hour of Day, Day of Year`: enable the use of change the day of the year which will affect the amount of solar radiation to the snow.
+- `Height Multiplier`: enable the use of change the height multiplier that changes the height of the terrain.
+- `Grid size`: change the grid size of each small cell grid size for terrain mesh.
+- `Fog `: change the range of the distanced fog to enhance the reality of rendered terrain and snow scene
 
 ## Overview
 
