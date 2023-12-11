@@ -153,7 +153,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   };
 
   const terrainParams = {
-    terrain: terrainOptions.everestTerrain,
+    terrain: terrainOptions.k2Terrain,
   }
 
   const resetParams: any = 
