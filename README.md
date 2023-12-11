@@ -41,8 +41,7 @@ This project implements a real-time snow accumulation simulation based on the pa
 
 <!-- ![Snow-Accumulation-Gif]() -->
 
-## Pipeline
-**Central Pipeline**
+## Central Pipeline
 
 We use compute shaders written in WGSL for WebGPU to simulate our snow accumulation. The overall pipeline can be broken down into 5 stages:
 
