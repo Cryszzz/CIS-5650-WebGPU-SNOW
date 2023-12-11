@@ -6,6 +6,8 @@ by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
 ![Teaser](img/teaser.gif)
 
+## Live Demo
+
 [Live Website](https://cryszzz.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
 
 ## Installation
