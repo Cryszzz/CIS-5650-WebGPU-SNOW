@@ -1,4 +1,4 @@
-# Real-Time Snow Accumulation Simulation on Terrain on WebGPU
+# Real-Time WebGPU Snow Accumulation Simulation on Large-Scale Terrain
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project**
 
