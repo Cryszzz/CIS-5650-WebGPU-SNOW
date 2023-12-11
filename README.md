@@ -76,6 +76,8 @@ Using our displacement and color map output from the compute shader, we interpol
 ### Skybox and Distanced Fog
 To further enhance the reality of our simulation for snow accumulation on large-scale terrain, we added a separate rendering pipeline for the cube-map-based skybox and integrated it in main.ts to allow the skybox to work with our central pipeline for terrain and snow rendering. We also added distanced fog in the fragment shader and added GUI parameters for the user to control the range of the fog for better interactivity.
 
+![Scene with Sky and Fog](https://github.com/Cryszzz/CIS-5650-Final-Project/blob/main/img/Skybox%20and%20Fog.png)
+
 ### Performance Notes
 
 We changed from CPU mesh loading to GPU mesh loading. On the CPU side, it only allows a mesh size of 200*200. It changes to 8kx8k on GPU mesh generation (this limit is caused by WebGPU texture maximum size is limited to 8kx8k).
@@ -103,7 +105,7 @@ The performance of our program depends on how large the resolution of the height
 ### References:
 - [Real-time GIS-based snow cover approximation and rendering for large terrains](https://www.sciencedirect.com/science/article/pii/S0097849317301693?fr=RR-2&ref=pdf_download&rr=821fc7e57b5d421b)
 - Base code from [WebGPU Samples](https://webgpu.github.io/webgpu-samples)
-- [dat-gui](https://github.com/dataarts/dat.gui) for gui controls
+- [dat-gui](https://github.com/dataarts/dat.gui) for GUI controls
 - [WebGPU documentation](https://www.w3.org/TR/webgpu/)
 - [Terrain Geotiff with Heightmap](https://search.asf.alaska.edu/#/)
 - [Terrain Texture](https://www.google.com/earth/about/)
