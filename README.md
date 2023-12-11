@@ -73,7 +73,7 @@ Using our displacement and color map output from the compute shader, we interpol
 
 ![Terrain Rendering](img/terrain-zoomed-out.png)
 
-### Skybox and Distanced Fog
+### Skybox & Distanced Fog
 To further enhance the reality of our simulation for snow accumulation on large-scale terrain, we added a separate rendering pipeline for the cube-map-based skybox and integrated it in main.ts to allow the skybox to work with our central pipeline for terrain and snow rendering. We also added distanced fog in the fragment shader and added GUI parameters for the user to control the range of the fog for better interactivity.
 
 ![Scene with Sky and Fog](https://github.com/Cryszzz/CIS-5650-Final-Project/blob/main/img/Skybox%20and%20Fog.png)
