@@ -1,7 +1,7 @@
 .canvasContainer {
   text-align: center;
   position: relative;
-  /* margin-top: 10px; */
+  margin-top: 10px; 
 }
 
 .canvasContainer>canvas {
