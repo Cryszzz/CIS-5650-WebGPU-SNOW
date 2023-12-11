@@ -2,7 +2,7 @@
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project**
 
-By [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()
+By [Xiaoxiao Zou](https://www.linkedin.com/in/xiaoxiao-zou-23482a1b9/), [Keyu Lu](https://www.linkedin.com/in/keyu-lu/), and [Jason Li](https://www.linkedin.com/in/jeylii/)
 
 ![Teaser](img/teaser.gif)
 
