@@ -50,6 +50,8 @@ We use compute shaders written in WGSL for WebGPU to simulate our snow accumulat
 3. **Compute: Snow Melt**: The degree-day method is used to simulate the melting of snow independently for each terrain cell.
 4. **Compute: Snow Redistribution**: For each terrain cell, redistribute accumulated snow to neighboring cells using inclination data.
 5. **Terrain & Snow Rendering**: Output a color and displacement map from the compute pipeline to be rendered over the terrain.
+6. **Vertex Stage**: Instance each mesh grid cell to the corresponding pixel of heightmap and calculated normals, uvs and positions of the terrain mesh.
+7. **Fragment Stage**: Using the normals and uvs from vertex stage together with texture from compute pipeline to calculate the final coloring of the snow mountain. 
 
 ![Pipeline](https://github.com/Cryszzz/CIS-5650-Final-Project/blob/main/img/Central%20Pipeline.png)
 
@@ -78,9 +80,11 @@ To further enhance the realisticness of our simulation for snow accumulation on 
 
 ![Scene with Sky and Fog](https://github.com/Cryszzz/CIS-5650-Final-Project/blob/main/img/Skybox%20and%20Fog.png)
 
-### Performance Notes
+### Performance Notes & GPU Mesh Generation
 
-We changed from CPU mesh loading to GPU mesh loading. On the CPU side, it only allows a mesh size of 200*200. It changes to 8kx8k on GPU mesh generation (this limit is caused by WebGPU texture maximum size is limited to 8kx8k).
+We instanced mesh on vertex shader using instancing drawing. The mesh size is limited to 8kx8k on GPU mesh generation (this limit is caused by WebGPU texture maximum size is limited to 8kx8k).
+
+![Grid-mesh](img/mesh.png)
 
 The performance of our program depends on how large the resolution of the height map is.
 
