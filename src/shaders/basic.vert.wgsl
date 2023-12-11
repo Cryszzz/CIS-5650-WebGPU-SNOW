@@ -5,7 +5,7 @@ struct Uniforms {
 @binding(1) @group(0) var mySampler: sampler;
 @binding(2) @group(0) var myTexture: texture_cube<f32>;
 
-const skybox_size=1000.0;
+const skybox_size=3000.0;
 
 struct VertexOutput {
   @builtin(position) Position : vec4<f32>,

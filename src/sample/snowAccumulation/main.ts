@@ -33,8 +33,8 @@ const cellInstanceByteSize =
   0;
 
 const cameraDefaults = {
-  position: vec3.create(0, 300, -80),
-  target: vec3.create(0, 0, 0),
+  position: vec3.create(-70, 350, -80),
+  target: vec3.create(-800, 400, -1000),
   // position: vec3.create(0, 5, -5),
   // target: vec3.create(0, 0, 0),
 };
@@ -98,8 +98,8 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
         maxSWE: 250000.0, //done
         temperatureLapseNormalizeFactor: 20.0, //done
         precipitationLapseNormalizeFactor: 20.0, //done
-        heightMul: 0.01, //done
-        gridSize: 0.1, //done
+        heightMul: 0.106, //done
+        gridSize: 0.7, //done
         terrainSkip: 3, //done
         terrainDataNormalizeFactor: 10.0, //done
         defaultTemperature: 8.0, //done
@@ -168,6 +168,12 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     gridSize: terrainParams.terrain.configurationParams.gridSize,
   }
 
+  const fogParams = 
+  {
+    fogStartDist: 30.0,
+    fogEndDist: 1200.0,
+  }
+
   let activeTerrain = terrainOptions.k2Terrain;
 
 
@@ -208,9 +214,13 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
 
   var sizeFolder = gui.addFolder('Size');
   sizeFolder.open();
-  sizeFolder.add(sizeParams, 'heightMul', 0.0, 0.1).name("Height Multiplier").step(0.002);
+  sizeFolder.add(sizeParams, 'heightMul', 0.0, 0.2).name("Height Multiplier").step(0.002);
   sizeFolder.add(sizeParams, 'gridSize', 0.0, 1.0).name("Grid Size").step(0.01);
-
+ 
+  var fogFolder = gui.addFolder('Fog');
+  fogFolder.open();
+  fogFolder.add(fogParams, 'fogStartDist', 10.0, 100.0).name("Fog Start");
+  fogFolder.add(fogParams, 'fogEndDist', 1000.0, 5000.0).name("Fog End"); 
 
   const devicePixelRatio = window.devicePixelRatio;
   canvas.width = canvas.clientWidth * devicePixelRatio;
@@ -782,7 +792,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     (2 * Math.PI) / 5,
     aspect,
     1,
-    5000.0
+    15000.0
   );
 
   const modelViewProjectionMatrix = mat4.create();
@@ -941,9 +951,9 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       uniformBuffer,
       64,
       new Float32Array([
-        view[0], view[4], view[8], // right
-        0, // padding
-        view[1], view[5], view[9], // up
+        camera.position[0], camera.position[1], camera.position[2], // right
+        fogParams.fogStartDist, // padding //fogstart
+        view[5], view[9], fogParams.fogEndDist,// up //fogend
         sizeParams.heightMul, // heightMul
         terrainParams.terrain.configurationParams.posNormalizeFactor,
         terrainParams.terrain.configurationParams.posMax,

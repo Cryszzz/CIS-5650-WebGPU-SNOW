@@ -121,8 +121,10 @@ fn SolarRadiationIndex(I: f32, A: f32, L0: f32, J: f32) -> vec3<f32>{
 ////////////////////////////////////////////////////////////////////////////////
 struct RenderParams {
   modelViewProjectionMatrix : mat4x4<f32>,
-  right : vec3<f32>,
-  up : vec3<f32>,
+  campos : vec3<f32>,
+  fogStart:f32,
+  up : vec2<f32>,
+  fogEnd:f32,
   heightMul : f32,
   configurationCSVariables: ConfigurationCS,
 }
@@ -218,6 +220,7 @@ origtexture: the texture buffer that is the original texture
 
 They varies in resolution, better to interpolate values for final result, but rn, change between these two to test whether we have correct computation.
 */
+const fogColor:vec3<f32> =vec3<f32>(0.5,0.5,0.5);
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
@@ -248,10 +251,15 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   let lambertFactor = max(dot(normalize(-lightDir), in.normal), 0.0);
   let lightingFactor = min(ambientFactor + lambertFactor, 1.0);
   var color = vec4(lightingFactor*out_color.xyz,1.0);
+  var fogStart:f32 =render_params.fogStart;
+  var fogEnd:f32 =render_params.fogEnd;
+  let fogFactor:f32= clamp((fogEnd-length(render_params.campos-in.position))/(fogEnd-fogStart),0.0,1.0);
+  let fogColorVec4: vec4<f32> =vec4<f32>(fogColor,1.0);
+  let colorWithFog:vec4<f32>=mix(fogColorVec4,color,fogFactor);
   // var color = vec4(out_color.xyz,1.0);
   // Apply a circular particle alpha mask
   //color.a = color.a * max(1.0 - length(in.quad_pos), 0.0);
-  return color;
+  return colorWithFog;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

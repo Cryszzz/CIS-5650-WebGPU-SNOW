@@ -38,12 +38,12 @@ export async function createSkyboxPipeline(device, presentationFormat)  {
 // Function to load and create cubemap texture
 export async function loadCubemapTexture(device) {
   const imgSrcs = [
-      '../assets/img/cubemap/posx.jpg',
-      '../assets/img/cubemap/negx.jpg',
-      '../assets/img/cubemap/posy.jpg',
-      '../assets/img/cubemap/negy.jpg',
-      '../assets/img/cubemap/posz.jpg',
-      '../assets/img/cubemap/negz.jpg',
+    '../assets/img/cubemap/posx.jpg',
+    '../assets/img/cubemap/negx.jpg',
+    '../assets/img/cubemap/posy.jpg',
+    '../assets/img/cubemap/negy.jpg',
+    '../assets/img/cubemap/posz.jpg',
+    '../assets/img/cubemap/negz.jpg',
   ];
 
   const promises = imgSrcs.map(async (src) => {

@@ -4,11 +4,9 @@
 
 by [Xiaoxiao Zou](), [Keyu Lu](), and [Jason Li]()).
 
-## THIS REPO IS DISCARDED, PLEASE GO TO RECENT ONE [SNOW ACCUMULATION](https://github.com/jailea/CIS-5650-Final-Project)
-
 ![Teaser](img/teaser.gif)
 
-[Live Website](https://cryszzz.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
+[Live Website](https://jailea.github.io/CIS-5650-Final-Project/samples/snowAccumulation)
 
 ## Installation
 1. Clone this repo
@@ -77,7 +75,15 @@ We change from CPU mesh loading to GPU mesh loading. On CPU side, it only allows
 
 Permance of our program depends on how large the resolution of the heightmap is. When the resolution is 
 
-## Future Work & References
+## Final Presentation:
+[Final Presentation Slide](https://docs.google.com/presentation/d/1QfnwwhX6g8tM5fp8iDHfXsaPnH0HTaQwD3LWRI_TxFk/edit?usp=sharing)
+
+## Milestone Presentations:
+[Milestone 1 Slide](https://docs.google.com/presentation/d/1uNRjlkvVQNS3TbfoODOnT562rLxhvPrwMv3znV_8AW0/edit?usp=sharing)
+
+[Milestone 2 Slide](https://docs.google.com/presentation/d/17AprlqkK8NhQwR6VgV3KRNBkIOB3YXKhVD7bH3x5vaQ/edit?usp=sharing)
+
+[Milestone 3 Slide](https://docs.google.com/presentation/d/1xQUIeNf7sn4tsLwD-Bp2S6V0gC3YropOTHALUkqWU24/edit?usp=sharing)
 
 ### Future Work to be completed:
 - Higher resolution snow simulation
