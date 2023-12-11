@@ -48,7 +48,7 @@ We use compute shaders written in WGSL for WebGPU to simulate our snow accumulat
 4. **Compute: Snow Redistribution**: For each terrain cell, redistribute accumulated snow to neighboring cells using inclination data.
 5. **Terrain & Snow Rendering**: Output a color and displacement map from the compute pipeline to be rendered over the terrain.
 
-![Pipeline](img/pipeline.png)
+![Pipeline](https://github.com/Cryszzz/CIS-5650-Final-Project/blob/main/img/Central%20Pipeline.png)
 
 ## Snow Accumulation Simulation
 To ensure efficiency of the snow accumulation simulation, a uniform grid over the terrain is used for computation, and snow values are calculated independently using a compute pipeline for each grid cell. 
