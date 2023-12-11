@@ -153,7 +153,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   };
 
   const terrainParams = {
-    terrain: terrainOptions.everestTerrain,
+    terrain: terrainOptions.k2Terrain,
   }
 
   const resetParams: any = 
@@ -635,7 +635,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
   let heightChanged = false;
   let colorChanged = false;
   terrainFolder.add(terrainParams, 'terrain',Object.values(terrainOptions).map(option => option.name)).name("Select Terrain")
-  .setValue(terrainOptions.everestTerrain.name)
+  .setValue(terrainOptions.k2Terrain.name)
   .onChange(async function (value) {
       terrainParams.terrain = Object.values(terrainOptions).find(option => option.name === value);
       mesh = await getTerrainMesh(terrainParams.terrain.terrainFilename, terrainParams.terrain.configurationParams.terrainSkip, terrainParams.terrain.configurationParams.terrainDataNormalizeFactor);
@@ -682,7 +682,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
       heightChanged = true;
     });
   // Can't get this to be set by default so doing it here
-  terrainParams.terrain = terrainOptions.everestTerrain;
+  terrainParams.terrain = terrainOptions.k2Terrain;
 
     // //const response = await fetch('../assets/img/file/k2-h.tif');
     // //const response = await fetch('../assets/img/Di-3d.png');

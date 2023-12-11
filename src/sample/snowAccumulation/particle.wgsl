@@ -412,8 +412,8 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
     }
     celldata.SnowWaterEquivalent = clamp(celldata.SnowWaterEquivalent, 0, simParams.configurationCSVariables.maxSWE * celldata.AreaXY);
     var slope = degrees(celldata.Inclination);
-    var f = select((slope - (celldata.Altitude * (simParams.configurationCSVariables.areaScaleFactor / 100.0)) / 100.0) / 65.0 , 0, slope < 15.0);
-    // var f = select(slope / 70.0 , 0, slope < 15.0);
+    // var f = select((slope - (celldata.Altitude * (simParams.configurationCSVariables.areaScaleFactor / 100.0)) / 100.0) / 65.0 , 0, slope < 15.0);
+    var f = select(slope / 65.0 , 0, slope < 15.0);
 	  var a3 = 50.0;
 
     // celldata.InterpolatedSWE = celldata.SnowWaterEquivalent * (1 - f);
