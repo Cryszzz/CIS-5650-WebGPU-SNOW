@@ -3,7 +3,7 @@ import { makeSample, SampleInit } from '../../components/SampleLayout';
 import { renderSkybox } from './skyboxPipeline';
 import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../../meshes/cube';
 import { createSkyboxPipeline, loadCubemapTexture } from './skyboxPipeline';
-import particleWGSL from './particle.wgsl';
+import snowComputeWGSL from './snowCompute.wgsl';
 import { getTerrainMesh, getTerrainCells } from '../../meshes/terrain';
 import { getSquareMesh} from '../../meshes/square';
 import { WASDCamera, cameraSourceInfo } from './camera';
@@ -384,14 +384,14 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     layout: 'auto',
     vertex: {
       module: device.createShaderModule({
-        code: particleWGSL,
+        code: snowComputeWGSL,
       }),
       entryPoint: 'vs_main',
       buffers: vertexBuffers,
     },
     fragment: {
       module: device.createShaderModule({
-        code: particleWGSL,
+        code: snowComputeWGSL,
       }),
       entryPoint: 'fs_main',
       targets: [
@@ -616,7 +616,7 @@ const init: SampleInit = async ({ canvas, pageState, gui, stats }) => {
     layout: 'auto',
     compute: {
       module: device.createShaderModule({
-        code: particleWGSL,
+        code: snowComputeWGSL,
       }),
       entryPoint: 'simulate',
     },
@@ -993,8 +993,8 @@ const Particles: () => JSX.Element = () =>
         contents: __SOURCE__,
       },
       {
-        name: './particle.wgsl',
-        contents: particleWGSL,
+        name: './snowCompute.wgsl',
+        contents: snowComputeWGSL,
         editable: true,
       },
     ],
