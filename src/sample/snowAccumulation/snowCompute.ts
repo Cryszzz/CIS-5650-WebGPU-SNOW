@@ -129,14 +129,14 @@ export function computeSnowCPU(cells, constantsParams, temperature?, precipitati
     //for (var time:i32 = 0; time < SimulationCSVariables.Timesteps; time=time+1) {
     var stationAltitudeOffset:number = cells.Altitude[idx] - constantsParams.measurementAltitude;
     var temperatureLapse:number = - (0.5 * stationAltitudeOffset) / (50.0 );
-    console.log("temperatureLapse: ", temperatureLapse, "stationAltitudeOffset: ", stationAltitudeOffset, "cells.Altitude[idx]: ", cells.Altitude[idx], "constantsParams.measurementAltitude: ", constantsParams.measurementAltitude)
+    // console.log("temperatureLapse: ", temperatureLapse, "stationAltitudeOffset: ", stationAltitudeOffset, "cells.Altitude[idx]: ", cells.Altitude[idx], "constantsParams.measurementAltitude: ", constantsParams.measurementAltitude)
 
     var tAir:number= typeof temperature !== 'undefined' ? temperature + temperatureLapse : sim_params.Temperature + temperatureLapse; // degree Celsius
 
     var precipitationLapse:number= 10.0 / 24.0 * stationAltitudeOffset / (50.0);
         // const precipitationLapse: number = 0;
     var precipitationNum:number = typeof precipitation !== 'undefined' ? precipitation : sim_params.Precipitation;
-    console.log("precipitationNum: ", precipitationNum, "precipitationLapse: ", precipitationLapse, "tAir: ", tAir, "temperature: ", temperature, "temperatureLapse: ", temperatureLapse, "stationAltitudeOffset: ", stationAltitudeOffset, "cells.Altitude[idx]: ", cells.Altitude[idx], "constantsParams.measurementAltitude: ", constantsParams.measurementAltitude);
+    // console.log("precipitationNum: ", precipitationNum, "precipitationLapse: ", precipitationLapse, "tAir: ", tAir, "temperature: ", temperature, "temperatureLapse: ", temperatureLapse, "stationAltitudeOffset: ", stationAltitudeOffset, "cells.Altitude[idx]: ", cells.Altitude[idx], "constantsParams.measurementAltitude: ", constantsParams.measurementAltitude);
     cells.DaysSinceLastSnowfall[idx] += 1.0 / 24.0;
 
       // Apply precipitation
@@ -159,7 +159,7 @@ export function computeSnowCPU(cells, constantsParams, temperature?, precipitati
             cells.SnowAlbedo[idx] = 0.8; // New snow sets the albedo to 0.8
         }
     }
-    console.log("temperature: " , temperature, "snow water equivalent: ", cells.SnowWaterEquivalent[idx])
+    // console.log("temperature: " , temperature, "snow water equivalent: ", cells.SnowWaterEquivalent[idx])
       
       // Apply melt
     if (cells.SnowWaterEquivalent[idx] > 0.0) {
@@ -203,7 +203,7 @@ export function computeSnowCPU(cells, constantsParams, temperature?, precipitati
             // console.log("c_m: ", c_m, "meltFactor: ", meltFactor, "melt amount: ", m);
             // Apply melt
             cells.SnowWaterEquivalent[idx] -= m;
-            console.log("snow water equivalent after melt: ", cells.SnowWaterEquivalent[idx]);
+            // console.log("snow water equivalent after melt: ", cells.SnowWaterEquivalent[idx]);
             cells.SnowWaterEquivalent[idx] = Math.max(0.0, cells.SnowWaterEquivalent[idx]);
         }
     }
@@ -223,12 +223,12 @@ export function computeSnowCPU(cells, constantsParams, temperature?, precipitati
     // console.log("output_color: ", output_color);
   }
   
-  console.log("max: ", max);
-  for (let idx = 0; idx < cells.Inclination.length; idx++) {
-    if (cells.InterpolatedSWE[idx] / max > 0.8)
-    {
-      console.log("SWE: " + cells.InterpolatedSWE[idx]);
-      console.log(cells.InterpolatedSWE[idx] / max);
-    }
-  }
+  // console.log("max: ", max);
+  // for (let idx = 0; idx < cells.Inclination.length; idx++) {
+  //   if (cells.InterpolatedSWE[idx] / max > 0.8)
+  //   {
+  //    console.log("SWE: " + cells.InterpolatedSWE[idx]);
+  //    console.log(cells.InterpolatedSWE[idx] / max);
+  //   }
+  // }
 }

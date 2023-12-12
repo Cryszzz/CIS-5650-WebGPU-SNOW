@@ -72,9 +72,6 @@ export async function loadCubemapTexture(device) {
 }
 
 export async function renderSkybox(device, pipeline, verticesBuffer, uniformBuffer, uniformBindGroup,passEncoder,cameraViewProj) {
-    //console.log(uniformBindGroup);
-  //device.queue.writeBuffer(uniformBuffer, 0, matrixArray.buffer, matrixArray.byteOffset, matrixArray.byteLength);
-  //const cameraViewProj = getModelViewProjectionMatrix(deltaTime);
     device.queue.writeBuffer(
         uniformBuffer,
         0,
@@ -84,12 +81,8 @@ export async function renderSkybox(device, pipeline, verticesBuffer, uniformBuff
     )
 
   // Issue draw call for the skybox
-  //const commandEncoder = device.createCommandEncoder();
-  //const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
   passEncoder.setPipeline(pipeline);
   passEncoder.setVertexBuffer(0, verticesBuffer);
   passEncoder.setBindGroup(0, uniformBindGroup);
   passEncoder.draw(cubeVertexCount);
-  //passEncoder.end();
-  //device.queue.submit([commandEncoder.finish()]);
 }

@@ -38,7 +38,6 @@ export const getWeatherData = (time: number, width: number, height: number) => {
     }
   }
 
-  //console.log("weather point 1");
 
   let deltaTimeHours = Math.floor(timeToHours(deltaTime));
   let weatherData : {
@@ -68,7 +67,6 @@ export const getWeatherData = (time: number, width: number, height: number) => {
       let precipitation = 0;
       if (x === 0 && z === 0 || x == width - 2 && z == height - 2)
       {
-        //console.log("weather point 2");
       }
 
       // calculate precipitation
@@ -76,11 +74,6 @@ export const getWeatherData = (time: number, width: number, height: number) => {
         // double loop was here before
         const rainFallMM = 2.5 * Math.exp(2.5 * Math.random()) / 24;
         precipitation = rainFallMM * noiseMeasurement[x][z];
-      }
-
-      if (x === 0 && z === 0 && x == width - 2 && z == height - 2)
-      {
-        console.log("");
       }
 
       // calculate temperature

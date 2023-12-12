@@ -12,26 +12,21 @@ async function loadAndUseHeightData(terrainFile) {
     const heightData = await getHeightData(url);
     imgText[0] = numberArray[0];
     imgText[1] = numberArray[1];
-    console.log("numberarray");
-    console.log(numberArray);
     return heightData;
 }
 
 async function generateTerrainMesh(terrainFile, terrainSkip, terrainDataNormalizeFactor) {
     const heightData = await loadAndUseHeightData(terrainFile);
-    const width = imgText[0]; // TODO: may have to swap this
-    const height = imgText[1]; // TODO: may have to swap this
+    const width = imgText[0]; 
+    const height = imgText[1]; 
     const gridSpacing = 1;
     const skip=terrainSkip;
     const verticesPerRow = Math.floor(width/skip); // height = verticesPerRow
     const verticesPerColumn = Math.floor(height/skip); //width = verticesPerColumn
-    console.log("verticesPerRow"+verticesPerRow );
-    console.log("verticesPerColumn"+verticesPerColumn );
 
     const positions: [number, number, number][] = [];
     for (let z = 0; z <verticesPerColumn*skip; z+=skip) {
         for (let x = 0; x <verticesPerRow*skip; x+=skip) {
-          // console.log(`x: ${x}, z: ${z}, heightData[z*width+x]: ${heightData[z*width+x]}`);
           const data=heightData[z*width+x];
           positions.push([(x - width / 2)*gridSpacing, data/terrainDataNormalizeFactor, (z - height / 2)*gridSpacing]);
         }
@@ -71,9 +66,6 @@ async function generateTerrainCells(mesh) {
   let width = mesh.width;
   let height = mesh.height; 
   let grid_size = (width - 1) * (height - 1);
-  console.log("grid_size " + grid_size);
-  console.log("side_width " + (width-1));
-  console.log("side_height " + (height-1));
 
   let cells :  {
     P0: [number, number, number][],
@@ -140,18 +132,14 @@ async function generateTerrainCells(mesh) {
       let P1_minus_P2 = vec3.subtract(vec3.create(), P1, P2);
       let P0_minus_P2ProjXZ = vec2.fromValues(P0_minus_P2[0], P0_minus_P2[2]);
       let P1_minus_P2ProjXZ = vec2.fromValues(P1_minus_P2[0], P1_minus_P2[2]);
-      // cells.AreaXZ = Math.abs(vec2.cross())
       cells.Area[cellIndex] = Math.abs(vec3.len(vec3.cross(vec3.create(), P0_minus_P2, P0_minus_P2)) / 2 + vec3.len(vec3.cross(vec3.create(), P1_minus_P2, P0_minus_P2)) / 2);
       cells.AreaXZ[cellIndex] = Math.abs((vec2.cross(vec3.create(), P0_minus_P2ProjXZ, P0_minus_P2ProjXZ))[2] / 2 + (vec2.cross(vec3.create(), P1_minus_P2ProjXZ, P0_minus_P2ProjXZ))[2] / 2);
 
       let P0toP3 = vec3.subtract(vec3.create(), P3, P0);
-      // console.log("P0toP3: ", P0toP3);
       let P0toP3ProjXZ = vec3.fromValues(P0toP3[0], 0, P0toP3[2]);
-      // console.log("P0toP3ProjXZ: ", P0toP3ProjXZ);
       cells.Inclination[cellIndex] = vec3.len(P0toP3) < EPSILON ? 0 : Math.acos(vec3.dot(P0toP3, P0toP3ProjXZ) / (vec3.len(P0toP3) * vec3.len(P0toP3ProjXZ)));
-      // console.log("cells.Inclination[cellIndex]: ", cells.Inclination[cellIndex])
 
-      // @TODO: assume constant for the moment, later handle in input data
+      // TODO: assume constant for the moment, later handle in input data
       const latitude = 47;
       // cells.Latitude[cellIndex] = latitude;
       cells.Latitude[cellIndex] = degreesToRadians(latitude);
@@ -168,20 +156,12 @@ async function generateTerrainCells(mesh) {
       if (cells.Altitude[cellIndex] / 100.0 > 3300.0) {
         let areaSquareMeters = cells.Area[cellIndex] / (100 * 100);
         let we = (2.5 + cells.Altitude[cellIndex] / 100 * 0.001) * areaSquareMeters;
-        // console.log("initial swe: " + we);
         snowWaterEquivalent = we;
-      // TODO: bind max snow buffer to this number
         initialMaxSnow = Math.max(snowWaterEquivalent / areaSquareMeters, initialMaxSnow);
       }
       
-      // TODO: if Aspect is used in compute shader, use this
-      // float Aspect = IsAlmostZero(NormalProjXY.Size()) ? 0 : FMath::Abs(FMath::Acos(FVector::DotProduct(North, NormalProjXY) / NormalProjXY.Size()));
-
       cells.SnowWaterEquivalent[cellIndex] = snowWaterEquivalent;
 
-      // TODO: Curvature
-      // cells.Curvature[cellIndex] = 1.0;
-      // cellIndex++;
     }
   }
 
@@ -203,18 +183,6 @@ async function generateTerrainCells(mesh) {
       neighborsIndices[6] = getCellIndex(x - 1, z, cell_width_x, cell_height_z);						// W
       neighborsIndices[7] = getCellIndex(x - 1, z - 1, cell_width_x, cell_height_z);					// NW
 
-      // if (x > 20 && x < 30 && z > 20 && z < 30) {
-      //   console.log("index: ", index);
-      //   console.log("neighborsIndices: ", neighborsIndices);
-      //   console.log("0: ", neighborsIndices[0]);
-      //   console.log("1: ", neighborsIndices[1]);
-      //   console.log("2: ", neighborsIndices[2]);
-      //   console.log("3: ", neighborsIndices[3]);
-      //   console.log("4: ", neighborsIndices[4]);
-      //   console.log("5: ", neighborsIndices[5]);
-      //   console.log("6: ", neighborsIndices[6]);
-      //   console.log("7: ", neighborsIndices[7]);
-      // }
       if (neighborsIndices[0] == -1 || neighborsIndices[1] == -1 || neighborsIndices[2] == -1 || neighborsIndices[3] == -1
         || neighborsIndices[4] == -1 || neighborsIndices[5] == -1 || neighborsIndices[6] == -1 || neighborsIndices[7] == -1)
         {
@@ -232,22 +200,11 @@ async function generateTerrainCells(mesh) {
       let Z8 = cells.Altitude[neighborsIndices[4]] / 100; // S
       let Z9 = cells.Altitude[neighborsIndices[5]] / 100; // SE
 
-      // console.log("cells.P1[index][0], cells.P0[index][0]: " + cells.P1[index][0] + ", " + cells.P0[index][0]);
       let L = cells.P1[index][0] - cells.P0[index][0]
-
-      // console.log("L: ", L);
-      // console.log("Z2: ", Z2);
-      // console.log("Z4: ", Z4);
-      // console.log("Z5: ", Z5);
-      // console.log("Z6: ", Z6);
-      // console.log("Z8: ", Z8);
 
       let D = ((Z4 + Z6) / 2 - Z5) / (L * L);
       let E = ((Z2 + Z8) / 2 - Z5) / (L * L);
       cells.Curvature[index] = 2 * (D + E);
-      // if (x > 20 && x < 30 && z > 20 && z < 30) {
-      //   console.log("curvature: ", cells.Curvature[index]);
-      // }
 
     }
   }
